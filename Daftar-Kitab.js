@@ -81,7 +81,7 @@ window.DATA_READER = [
     ["Al-Muqoddimah al-Jazariyyah", "الْمُقَدِّمَةُ الْجَزَرِيَّةُ", "ابن الجزري", "Ibnul Jazari (w. 833 H)", "Pengantar Jazari", "Nazham tajwid lanjutan yang jadi rujukan utama.", "M"]
   ]],
   ["Nahwu (Tata Bahasa Arab)", "Kunci memahami kitab kuning. Urutan kira-kira dari dasar ke lanjut.", [
-    ["Al-Ajurrumiyyah", "الْآجُرُّومِيَّةُ", "ابن آجروم", "Ibnu Ajurrum (w. 723 H)", "Matan Ajurrum", "Pengantar nahwu paling ringkas, kitab pertama belajar nahwu.", "P"],
+    ["Al-Jurrumiyyah", "الْآجُرُّومِيَّةُ", "ابن آجروم", "Ibnu Ajurrum (w. 723 H)", "Matan Ajurrum", "Pengantar nahwu paling ringkas, kitab pertama belajar nahwu.", "P"],
     ["Al-Mutammimah", "الْمُتَمِّمَةُ", "الرعيني الحطاب", "Muhammad ar-Ru'ayni al-Hathab", "Pelengkap", "Syarah yang melengkapi Al-Ajurrumiyyah.", "P"],
     ["Nazham Imrithi", "نَظْمُ الْعِمْرِيطِيِّ", "شرف الدين يحيى العمريطي", "Syarafuddin Yahya al-Imrithi", "Nazham Imrithi", "Nazham nahwu menengah yang sering dihafal santri.", "M"],
     ["Qatrun Nada", "قَطْرُ النَّدَى وَبَلُّ الصَّدَى", "ابن هشام", "Ibnu Hisyam (w. 761 H)", "Tetesan embun", "Nahwu menengah yang ringkas dan jelas.", "M"],
