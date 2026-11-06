@@ -1,16 +1,16 @@
 /* ============================================================
    MESIN READER UNIVERSAL (mesin-reader.js)
-   Berisi 2 fungsi utama:
-   1. bukaReader(config)  -> Untuk menu statis (Kitab, Kamus, Hadis)
-   2. bukaDoaEQuran()     -> Untuk menu Doa dari API EQuran.id
    ============================================================ */
 
 /* ==========================================
    FUNGSI 1: MENU STATIS (Kitab, Kamus, dll)
    ========================================== */
 window.bukaReader = function(config) {
-    document.getElementById("app-judul").textContent = config.judul || "Reader";
-    document.querySelector("#q").placeholder = config.placeholderCari || "Cari...";
+    var elJudul = document.getElementById("app-judul");
+    if (elJudul) elJudul.textContent = config.judul || "Reader";
+    
+    var elQ = document.getElementById("q");
+    if (elQ) elQ.placeholder = config.placeholderCari || "Cari...";
     
     var st = { all: [], sel: 0, bi: "all", ob: {}, ld: {} };
     var LV = { P: "Pemula", M: "Menengah", L: "Lanjut" };
@@ -46,7 +46,7 @@ window.bukaReader = function(config) {
                     });
                 });
                 st.all.forEach(function (x) { x.nn = norm(x.nama); x.hay = norm([x.nama, x.pl, x.arti, x.ar, x.ap].join(" ")); });
-                view();
+                view(); // <-- SEKARANG DIPANGGIL SETELAH DATA SIAP
             }
         };
         s.onerror = function() {
@@ -139,11 +139,13 @@ window.bukaReader = function(config) {
         
         // Kiri (Kitab)
         var h = '<select id="k" class="' + (d ? "" : "ph") + '"><option value=""' + (d ? "" : " selected") + ">" + config.labelPilih + "</option>";
-        window.DATA_READER.forEach(function (g) {
-            h += '<optgroup label="' + esc(g[0]) + '">';
-            st.all.forEach(function (x) { if (x.grup === g[0]) h += '<option value="' + x.id + '"' + (x.id === st.sel ? " selected" : "") + ">" + esc(x.nama) + "</option>"; });
-            h += "</optgroup>";
-        });
+        if(window.DATA_READER) {
+            window.DATA_READER.forEach(function (g) {
+                h += '<optgroup label="' + esc(g[0]) + '">';
+                st.all.forEach(function (x) { if (x.grup === g[0]) h += '<option value="' + x.id + '"' + (x.id === st.sel ? " selected" : "") + ">" + esc(x.nama) + "</option>"; });
+                h += "</optgroup>";
+            });
+        }
         h += '</select>';
 
         // Kanan (Pembahasan)
@@ -156,8 +158,11 @@ window.bukaReader = function(config) {
         }
         h += '</select>';
         
-        document.getElementById("bar-select").innerHTML = h;
-        document.getElementById("main").innerHTML = detail();
+        var barSelect = document.getElementById("bar-select");
+        if (barSelect) barSelect.innerHTML = h;
+        
+        var main = document.getElementById("main");
+        if (main) main.innerHTML = detail();
     }
 
     function pilih(id) {
@@ -185,7 +190,7 @@ window.bukaReader = function(config) {
         box.innerHTML = h; box.className = "sg on";
         return r;
     }
-    function tutupSaran() { document.getElementById("q").value = ""; tampilSaran(); }
+    function tutupSaran() { var el = document.getElementById("q"); if(el) el.value = ""; tampilSaran(); }
 
     var lastWarn = 0;
     function peringatan() {
@@ -197,31 +202,35 @@ window.bukaReader = function(config) {
     }
 
     // Event Listener
-    document.getElementById("app").addEventListener("input", function (e) { if (e.target.id === "q") tampilSaran(); });
-    document.getElementById("app").addEventListener("keydown", function (e) {
-        if (e.target.id === "q" && e.key === "Enter") { var r = tampilSaran(); if (r[0]) { tutupSaran(); pilih(r[0].id); } }
-        if (e.target.id === "b" && !st.sel) { e.preventDefault(); peringatan(); }
-    });
-    document.getElementById("app").addEventListener("mousedown", function (e) { if (e.target.id === "b" && !st.sel) { e.preventDefault(); e.target.blur(); peringatan(); } });
-    document.getElementById("app").addEventListener("change", function (e) {
-        if (e.target.id === "k") pilih(+e.target.value || 0);
-        if (e.target.id === "b" && st.sel) { st.bi = e.target.value; view(); }
-    });
-    document.getElementById("app").addEventListener("click", function (e) {
-        var t = e.target;
-        var li = t.closest && t.closest(".li[data-id]");
-        if (li) { var id = +li.getAttribute("data-id"); tutupSaran(); pilih(id); return; }
-        if (t.getAttribute && t.getAttribute("data-retry")) { e.preventDefault(); var d = cariKitab(st.sel); if (d) { st.ld[d.id] = ""; muatIsi(d); view(); } return; }
-        var hd = t.closest && t.closest(".hd");
-        if (hd) {
-            var box = hd.parentNode, k = box.getAttribute("data-b");
-            if (k) { var on = st.ob[k] === false; st.ob[k] = on; box.classList.toggle("on", on); }
-        }
-    });
+    var elApp = document.getElementById("app");
+    if(elApp) {
+        elApp.addEventListener("input", function (e) { if (e.target.id === "q") tampilSaran(); });
+        elApp.addEventListener("keydown", function (e) {
+            if (e.target.id === "q" && e.key === "Enter") { var r = tampilSaran(); if (r[0]) { tutupSaran(); pilih(r[0].id); } }
+            if (e.target.id === "b" && !st.sel) { e.preventDefault(); peringatan(); }
+        });
+        elApp.addEventListener("mousedown", function (e) { if (e.target.id === "b" && !st.sel) { e.preventDefault(); e.target.blur(); peringatan(); } });
+        elApp.addEventListener("change", function (e) {
+            if (e.target.id === "k") pilih(+e.target.value || 0);
+            if (e.target.id === "b" && st.sel) { st.bi = e.target.value; view(); }
+        });
+        elApp.addEventListener("click", function (e) {
+            var t = e.target;
+            var li = t.closest && t.closest(".li[data-id]");
+            if (li) { var id = +li.getAttribute("data-id"); tutupSaran(); pilih(id); return; }
+            if (t.getAttribute && t.getAttribute("data-retry")) { e.preventDefault(); var d = cariKitab(st.sel); if (d) { st.ld[d.id] = ""; muatIsi(d); view(); } return; }
+            var hd = t.closest && t.closest(".hd");
+            if (hd) {
+                var box = hd.parentNode, k = box.getAttribute("data-b");
+                if (k) { var on = st.ob[k] === false; st.ob[k] = on; box.classList.toggle("on", on); }
+            }
+        });
+    }
 
     window.addEventListener("ngpref", status);
     setTimeout(status, 2500);
 
+    // Tampilkan status awal, lalu tarik data
     status();
     muatDataInduk();
 };
