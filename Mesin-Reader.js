@@ -1,5 +1,5 @@
 /* ============================================================
-   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL FIX 2
+   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL
    ============================================================ */
 
 // --- FUNGSI 1: UNTUK MENU STATIS (Kitab, Kamus, Hadis) ---
@@ -18,7 +18,6 @@ window.bukaReader = function(config) {
     function teks(t) { return Array.isArray(t) ? t.join("\n\n") : (t == null ? "" : String(t)); }
     function norm(s) { return String(s || "").toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g, "").replace(/q/g, "k").replace(/[^a-z0-9\u0600-\u06FF]/g, ""); }
     
-    // PERBAIKAN: Mengizinkan tanda hubung (-) dalam nama file
     function namaFile(nama) { 
         return nama.replace(/[^A-Za-z0-9\-]+/g, " ").trim().split(" ").map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join("") + ".js"; 
     }
@@ -34,10 +33,9 @@ window.bukaReader = function(config) {
     function cariKitab(id) { return st.all.filter(function (x) { return x.id === id; })[0]; }
     function buku(d) { return d ? window.KITAB[d.nama] : null; }
 
-    // Pemuatan Data Induk (Dari Daftar-Kitab.js)
     function muatDataInduk() {
         var s = document.createElement("script");
-        s.src = config.sumberData; // Alamat Daftar-Kitab.js
+        s.src = config.sumberData;
         s.onload = function() {
             if (window.DATA_READER) {
                 var n = 0;
@@ -58,7 +56,6 @@ window.bukaReader = function(config) {
         document.head.appendChild(s);
     }
 
-    // Pemuatan Isi Kitab (Menggunakan window.KITAB_BASE)
     function muatIsi(d) {
         if (window.KITAB[d.nama]) { st.ld[d.id] = "ok"; return; }
         if (st.ld[d.id] === "load") return;
@@ -74,12 +71,10 @@ window.bukaReader = function(config) {
         s.onload = function () { fin(true); };
         s.onerror = function () { fin(false); };
         s.async = true;
-        // Menggunakan KITAB_BASE dari file data
         s.src = (window.KITAB_BASE || "") + namaFile(d.nama);
         document.head.appendChild(s);
     }
 
-    // Render Item
     function itemHtml(x) {
         return '<div class="it">' +
         (x.no != null && x.no !== "" ? '<div class="bn">' + esc(x.no) + "</div>" : "") +
@@ -96,7 +91,6 @@ window.bukaReader = function(config) {
         return h;
     }
 
-    // Render Detail
     function detail() {
         var d = st.sel ? cariKitab(st.sel) : null;
         if (!d) {
@@ -120,8 +114,6 @@ window.bukaReader = function(config) {
         sb = b.sebutan || "Bab";
         if (b.catatan) h += '<p class="pg">' + esc(b.catatan) + "</p>";
         var bab = b.bab || [];
-        
-        // PERBAIKAN: Logika untuk menampilkan semua atau satu bab
         if (st.bi === "all") {
             bab.forEach(function (r, i) {
                 var k = d.id + ":" + i, on = st.ob[k] !== false;
@@ -141,7 +133,6 @@ window.bukaReader = function(config) {
         return h;
     }
 
-    // Render View
     function view() {
         var d = st.sel ? cariKitab(st.sel) : null, b = buku(d), sb = (b && b.sebutan) || "Bab";
         var elK = document.getElementById("k");
@@ -224,7 +215,6 @@ window.bukaReader = function(config) {
         elApp.addEventListener("mousedown", function (e) { if (e.target.id === "b" && !st.sel) { e.preventDefault(); e.target.blur(); peringatan(); } });
         elApp.addEventListener("change", function (e) {
             if (e.target.id === "k") pilih(+e.target.value || 0);
-            // PERBAIKAN: Saat dropdown kanan diubah, render ulang detail
             if (e.target.id === "b" && st.sel) { 
                 st.bi = e.target.value; 
                 view(); 
@@ -323,9 +313,9 @@ window.bukaDoaEQuran = function () {
 
     if(elMain) elMain.innerHTML = '<div class="msg">Memuat daftar doa...</div>';
     
-    // Panggil file Daftar-Doa.js dari GitHub
+    // Kunci pencarian hanya ke folder js/
     var script = document.createElement("script");
-    script.src = "https://teamkeringat.github.io/files/Daftar-Doa.js";
+    script.src = "https://teamkeringat.github.io/js/Daftar-Doa.js";
     script.onload = function() {
         if (typeof window.muatDataDoa === 'function') {
             window.muatDataDoa(function(data) {
@@ -339,8 +329,8 @@ window.bukaDoaEQuran = function () {
                                 grup: g[0],
                                 nama: r[0],
                                 ar: r[1],
-                                tr: r[3], // Latin
-                                idn: r[4], // Arti
+                                tr: r[3],
+                                idn: r[4],
                                 tentang: r[5]
                             });
                         });
@@ -354,7 +344,7 @@ window.bukaDoaEQuran = function () {
         }
     };
     script.onerror = function() {
-        if(elMain) elMain.innerHTML = '<div class="msg">Gagal memuat file Daftar-Doa.js dari GitHub.</div>';
+        if(elMain) elMain.innerHTML = '<div class="msg">Gagal memuat file Daftar-Doa.js. Pastikan sudah di-upload ke folder js/.</div>';
     };
     document.head.appendChild(script);
 };
