@@ -1,5 +1,5 @@
 /* ============================================================
-   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL
+   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL FIX
    ============================================================ */
 
 // --- FUNGSI 1: UNTUK MENU STATIS (Kitab, Kamus, Hadis) ---
@@ -17,7 +17,11 @@ window.bukaReader = function(config) {
     function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&", "<": "<", ">": ">", '"': '"' }[c]; }); }
     function teks(t) { return Array.isArray(t) ? t.join("\n\n") : (t == null ? "" : String(t)); }
     function norm(s) { return String(s || "").toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g, "").replace(/q/g, "k").replace(/[^a-z0-9\u0600-\u06FF]/g, ""); }
-    function namaFile(nama) { return nama.replace(/[^A-Za-z0-9]+/g, " ").trim().split(" ").map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join("") + ".js"; }
+    
+    // PERBAIKAN: Mengizinkan tanda hubung (-) dalam nama file
+    function namaFile(nama) { 
+        return nama.replace(/[^A-Za-z0-9\-]+/g, " ").trim().split(" ").map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join("") + ".js"; 
+    }
 
     function status() {
         var s = document.getElementById("stat");
