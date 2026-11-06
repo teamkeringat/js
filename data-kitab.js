@@ -1,3 +1,13 @@
+/* ============================================================
+   DAFTAR KITAB KUNING
+   Lokasi: https://teamkeringat.github.io/js/Daftar-Kitab.js
+   ============================================================ */
+
+// 1. Tentukan alamat folder tempat file isi kitab disimpan
+window.KITAB_BASE = "https://teamkeringat.github.io/KitabKuning/";
+
+// 2. Daftar Kitab
+// Format: [kategori, pengantar, [ [nama, judulArab, pengarangArab, pengarangLatin, artiJudul, penjelasan, tingkat P/M/L], ... ]]
 window.DATA_READER = [
 ["Tauhid & Akidah", "Ilmu tentang keyakinan dasar dalam Islam.", [
 ["Aqidatul Awam", "عَقِيدَةُ الْعَوَامِّ", "أحمد المرزوقي", "Sayyid Ahmad al-Marzuqi", "Akidah orang awam", "Nazhom (syair) tauhid ringkas tentang sifat Alloh dan para rasul.", "P"],
@@ -118,4 +128,3 @@ window.DATA_READER = [
 ["Dalailul Khairat", "دَلَائِلُ الْخَيْرَاتِ", "الجزولي", "Muhammad al-Jazuli", "Petunjuk kebaikan", "Kumpulan sholawat kepada Nabi.", "P"]
 ]]
 ];
-
