@@ -1,5 +1,5 @@
 /* ============================================================
-   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL REVISI
+   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL KOTAK JUDUL
    ============================================================ */
 
 // --- FUNGSI 1: UNTUK MENU STATIS (Kitab, Kamus, Hadis) ---
@@ -77,12 +77,12 @@ window.bukaReader = function(config) {
 
     function itemHtml(x) {
         return '<div class="it">' +
-        (x.no != null && x.no !== "" ? '<div class="bn">' + esc(x.no) + "</div>" : "") +
         (x.ar ? '<div class="ar">' + esc(x.ar) + "</div>" : "") +
         (x.lt ? '<div class="lt">' + esc(x.lt) + "</div>" : "") +
         (x.tr ? '<div class="tr">' + esc(x.tr) + "</div>" : "") +
         (x.ket ? '<div class="tn">' + esc(x.ket) + "</div>" : "") + "</div>";
     }
+
     function isiBab(r) {
         var h = "";
         if (r.pengantar) h += '<p class="pg">' + esc(teks(r.pengantar)) + "</p>";
@@ -117,16 +117,14 @@ window.bukaReader = function(config) {
         if (st.bi === "all") {
             bab.forEach(function (r, i) {
                 var k = d.id + ":" + i, on = st.ob[k] !== false;
-                h += '<div class="dd' + (on ? " on" : "") + '" data-b="' + k + '"><div class="hd"><span class="no">' + (i + 1) +
-                '</span><span class="nm">' + esc(r.judul) +
-                (r.arab ? '<div class="ar" style="font-size:calc(1.3rem * var(--z,1));margin-top:4px">' + esc(r.arab) + "</div>" : "") +
-                '</span><span class="ch">›</span></div><div class="bd">' + isiBab(r) + "</div></div>";
+                h += '<div class="dd' + (on ? " on" : "") + '" data-b="' + k + '">' +
+                '<div class="hd"><span class="nm">' + esc(r.judul) + '</span><span class="ch">›</span></div>' +
+                '<div class="bd">' + isiBab(r) + "</div></div>";
             });
         } else {
             var r1 = bab[+st.bi];
             if (r1) {
-                h += '<div class="dd on"><div class="hd"><span class="no">' + (+st.bi + 1) + '</span><span class="nm">' + esc(sb) + " " + (+st.bi + 1) + ". " + esc(r1.judul) +
-                (r1.arab ? '<div class="ar" style="font-size:calc(1.3rem * var(--z,1));margin-top:4px">' + esc(r1.arab) + "</div>" : "") +
+                h += '<div class="dd on"><div class="hd"><span class="nm">' + esc(sb) + " " + (+st.bi + 1) + ". " + esc(r1.judul) +
                 '</span></div><div class="bd">' + isiBab(r1) + "</div></div>";
             }
         }
