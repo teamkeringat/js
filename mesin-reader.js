@@ -1,7 +1,8 @@
 /* ============================================================
-   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL
+   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL TOTAL
    ============================================================ */
 
+// --- FUNGSI 1: UNTUK MENU STATIS / 3 KOTAK (Kitab Kuning, Kamus, Hadis) ---
 window.bukaReader = function(config) {
     var elJudul = document.getElementById("app-judul");
     if (elJudul) elJudul.textContent = config.judul || "Reader";
@@ -132,7 +133,6 @@ window.bukaReader = function(config) {
         var elK = document.getElementById("k");
         var elB = document.getElementById("b");
         
-        // Isi dropdown KIRI (Kitab)
         if (elK) {
             var hk = '<option value=""' + (d ? "" : " selected") + ">" + config.labelPilih + "</option>";
             if(window.DATA_READER) {
@@ -145,7 +145,6 @@ window.bukaReader = function(config) {
             elK.innerHTML = hk;
         }
 
-        // Isi dropdown KANAN (Pembahasan)
         if (elB) {
             var hb = "";
             if (!d) hb = '<option value="all">Pembahasan</option>';
@@ -157,7 +156,6 @@ window.bukaReader = function(config) {
             elB.innerHTML = hb;
         }
         
-        // Isi area detail
         var main = document.getElementById("main");
         if (main) main.innerHTML = detail();
     }
@@ -190,7 +188,6 @@ window.bukaReader = function(config) {
         box.innerHTML = h; box.className = "sg on";
         return r;
     }
-    
     function tutupSaran() { var el = document.getElementById("q"); if(el) el.value = ""; tampilSaran(); }
 
     var lastWarn = 0;
@@ -203,7 +200,8 @@ window.bukaReader = function(config) {
     }
 
     var elApp = document.getElementById("app");
-    if(elApp) {
+    if(elApp && !elApp.dataset.bound) {
+        elApp.dataset.bound = "1";
         elApp.addEventListener("input", function (e) { if (e.target.id === "q") tampilSaran(); });
         elApp.addEventListener("keydown", function (e) {
             if (e.target.id === "q" && e.key === "Enter") { var r = tampilSaran(); if (r[0]) { tutupSaran(); pilih(r[0].id); } }
@@ -231,16 +229,13 @@ window.bukaReader = function(config) {
     setTimeout(status, 2500);
 
     status();
-    // Set awal tulisan "Pembahasan" di dropdown kanan agar muncul sebelum data ditarik
     var elB = document.getElementById("b");
-    if(elB) elB.innerHTML = '<option value="all">Pembahasan</option>'; 
+    if(elB && !elB.innerHTML.trim()) elB.innerHTML = '<option value="all">Pembahasan</option>';
     
     muatDataInduk();
 };
 
-/* ==========================================
-   FUNGSI 2: DOA EQURAN.ID (Mode 2 Kotak)
-   ========================================== */
+// --- FUNGSI 2: UNTUK MENU DOA / 2 KOTAK (API EQuran.id) ---
 window.bukaDoaEQuran = function () {
     var API = "https://equran.id/api/doa";
     var st = { all: [], sel: 0 };
@@ -265,7 +260,6 @@ window.bukaDoaEQuran = function () {
             elMain.innerHTML = '<div class="msg">Silakan pilih doa terlebih dahulu dari menu di atas.</div>';
             return;
         }
-
         var h = '<div class="ic">' +
                 '<div class="bh">' + esc(d.nama) + '</div>' +
                 '<div class="ar">' + esc(d.ar) + '</div>' +
@@ -284,7 +278,8 @@ window.bukaDoaEQuran = function () {
         if(elK) elK.innerHTML = h;
     }
 
-    if (elK) {
+    if (elK && !elK.dataset.bound) {
+        elK.dataset.bound = "1";
         elK.addEventListener("change", function(e) {
             st.sel = e.target.value;
             if(st.sel) elK.classList.remove("ph");
@@ -292,7 +287,8 @@ window.bukaDoaEQuran = function () {
         });
     }
 
-    if (elQ) {
+    if (elQ && !elQ.dataset.bound) {
+        elQ.dataset.bound = "1";
         elQ.addEventListener("input", function(e) {
             var q = e.target.value.toLowerCase();
             var filter = st.all.filter(function(d) {
