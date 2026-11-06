@@ -1,10 +1,7 @@
 /* ============================================================
-   MESIN READER UNIVERSAL (mesin-reader.js)
+   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL
    ============================================================ */
 
-/* ==========================================
-   FUNGSI 1: MENU STATIS (Kitab, Kamus, dll)
-   ========================================== */
 window.bukaReader = function(config) {
     var elJudul = document.getElementById("app-judul");
     if (elJudul) elJudul.textContent = config.judul || "Reader";
@@ -32,7 +29,6 @@ window.bukaReader = function(config) {
     function cariKitab(id) { return st.all.filter(function (x) { return x.id === id; })[0]; }
     function buku(d) { return d ? window.KITAB[d.nama] : null; }
 
-    // Pemuatan Data Induk
     function muatDataInduk() {
         var s = document.createElement("script");
         s.src = config.sumberData;
@@ -46,16 +42,16 @@ window.bukaReader = function(config) {
                     });
                 });
                 st.all.forEach(function (x) { x.nn = norm(x.nama); x.hay = norm([x.nama, x.pl, x.arti, x.ar, x.ap].join(" ")); });
-                view(); // <-- SEKARANG DIPANGGIL SETELAH DATA SIAP
+                view();
             }
         };
         s.onerror = function() {
-            document.getElementById("main").innerHTML = '<div class="msg">Gagal memuat data dari ' + config.sumberData + '</div>';
+            var m = document.getElementById("main");
+            if(m) m.innerHTML = '<div class="msg">Gagal memuat data dari ' + config.sumberData + '</div>';
         };
         document.head.appendChild(s);
     }
 
-    // Pemuatan Isi Kitab
     function muatIsi(d) {
         if (window.KITAB[d.nama]) { st.ld[d.id] = "ok"; return; }
         if (st.ld[d.id] === "load") return;
@@ -75,7 +71,6 @@ window.bukaReader = function(config) {
         document.head.appendChild(s);
     }
 
-    // Render Item
     function itemHtml(x) {
         return '<div class="it">' +
         (x.no != null && x.no !== "" ? '<div class="bn">' + esc(x.no) + "</div>" : "") +
@@ -92,7 +87,6 @@ window.bukaReader = function(config) {
         return h;
     }
 
-    // Render Detail
     function detail() {
         var d = st.sel ? cariKitab(st.sel) : null;
         if (!d) {
@@ -133,34 +127,37 @@ window.bukaReader = function(config) {
         return h;
     }
 
-    // Render View
     function view() {
         var d = st.sel ? cariKitab(st.sel) : null, b = buku(d), sb = (b && b.sebutan) || "Bab";
+        var elK = document.getElementById("k");
+        var elB = document.getElementById("b");
         
-        // Kiri (Kitab)
-        var h = '<select id="k" class="' + (d ? "" : "ph") + '"><option value=""' + (d ? "" : " selected") + ">" + config.labelPilih + "</option>";
-        if(window.DATA_READER) {
-            window.DATA_READER.forEach(function (g) {
-                h += '<optgroup label="' + esc(g[0]) + '">';
-                st.all.forEach(function (x) { if (x.grup === g[0]) h += '<option value="' + x.id + '"' + (x.id === st.sel ? " selected" : "") + ">" + esc(x.nama) + "</option>"; });
-                h += "</optgroup>";
-            });
+        // Isi dropdown KIRI (Kitab)
+        if (elK) {
+            var hk = '<option value=""' + (d ? "" : " selected") + ">" + config.labelPilih + "</option>";
+            if(window.DATA_READER) {
+                window.DATA_READER.forEach(function (g) {
+                    hk += '<optgroup label="' + esc(g[0]) + '">';
+                    st.all.forEach(function (x) { if (x.grup === g[0]) hk += '<option value="' + x.id + '"' + (x.id === st.sel ? " selected" : "") + ">" + esc(x.nama) + "</option>"; });
+                    hk += "</optgroup>";
+                });
+            }
+            elK.innerHTML = hk;
         }
-        h += '</select>';
 
-        // Kanan (Pembahasan)
-        h += '<select id="b" class="' + (d ? "" : "ph") + '">';
-        if (!d) h += "Pembahasan";
-        else if (!b) h += '<option value="all">' + (st.ld[d.id] === "fail" ? "Belum ada isi" : "Memuat...") + "</option>";
-        else {
-            h += '<option value="all"' + (st.bi === "all" ? " selected" : "") + ">Semua " + esc(sb) + "</option>";
-            (b.bab || []).forEach(function (r, i) { h += '<option value="' + i + '"' + (String(st.bi) === String(i) ? " selected" : "") + ">" + esc(sb) + " " + (i + 1) + " · " + esc(r.judul) + "</option>"; });
+        // Isi dropdown KANAN (Pembahasan)
+        if (elB) {
+            var hb = "";
+            if (!d) hb = '<option value="all">Pembahasan</option>';
+            else if (!b) hb = '<option value="all">' + (st.ld[d.id] === "fail" ? "Belum ada isi" : "Memuat...") + "</option>";
+            else {
+                hb += '<option value="all"' + (st.bi === "all" ? " selected" : "") + ">Semua " + esc(sb) + "</option>";
+                (b.bab || []).forEach(function (r, i) { hb += '<option value="' + i + '"' + (String(st.bi) === String(i) ? " selected" : "") + ">" + esc(sb) + " " + (i + 1) + " · " + esc(r.judul) + "</option>"; });
+            }
+            elB.innerHTML = hb;
         }
-        h += '</select>';
         
-        var barSelect = document.getElementById("bar-select");
-        if (barSelect) barSelect.innerHTML = h;
-        
+        // Isi area detail
         var main = document.getElementById("main");
         if (main) main.innerHTML = detail();
     }
@@ -182,7 +179,10 @@ window.bukaReader = function(config) {
     }
     
     function tampilSaran() {
-        var q = document.getElementById("q").value, box = document.getElementById("sg");
+        var el = document.getElementById("q");
+        var box = document.getElementById("sg");
+        if(!el || !box) return;
+        var q = el.value;
         if (!q.trim()) { box.className = "sg"; box.innerHTML = ""; return []; }
         var r = saran(q), h = "";
         r.forEach(function (x) { h += '<button class="li" data-id="' + x.id + '">' + esc(x.nama) + '<div class="gp">' + esc(x.pl) + " · " + esc(x.arti) + "</div></button>"; });
@@ -190,6 +190,7 @@ window.bukaReader = function(config) {
         box.innerHTML = h; box.className = "sg on";
         return r;
     }
+    
     function tutupSaran() { var el = document.getElementById("q"); if(el) el.value = ""; tampilSaran(); }
 
     var lastWarn = 0;
@@ -201,7 +202,6 @@ window.bukaReader = function(config) {
         alert(config.labelKosong);
     }
 
-    // Event Listener
     var elApp = document.getElementById("app");
     if(elApp) {
         elApp.addEventListener("input", function (e) { if (e.target.id === "q") tampilSaran(); });
@@ -230,8 +230,11 @@ window.bukaReader = function(config) {
     window.addEventListener("ngpref", status);
     setTimeout(status, 2500);
 
-    // Tampilkan status awal, lalu tarik data
     status();
+    // Set awal tulisan "Pembahasan" di dropdown kanan agar muncul sebelum data ditarik
+    var elB = document.getElementById("b");
+    if(elB) elB.innerHTML = '<option value="all">Pembahasan</option>'; 
+    
     muatDataInduk();
 };
 
