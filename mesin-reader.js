@@ -1,14 +1,9 @@
-/* ============================================================
-   FUNGSI KHUSUS: DOA EQURAN.ID (Mode Dropdown Mandiri)
-   ============================================================ */
 window.bukaDoaEQuran = function () {
     var API = "https://equran.id/api/doa";
     var st = { all: [], sel: 0 };
 
-    // Ambil Elemen UI
     var elQ = document.getElementById("q");
-    var elK = document.getElementById("k"); // Dropdown Kiri (Nama Doa)
-    var elB = document.getElementById("b"); // Dropdown Kanan (Pembahasan)
+    var elK = document.getElementById("k");
     var elMain = document.getElementById("main");
     var elStat = document.getElementById("stat");
 
@@ -21,7 +16,6 @@ window.bukaDoaEQuran = function () {
         else elStat.textContent = "⏳ Menunggu pengaturan Ngelingan...";
     }
 
-    // Render isi doa di area bawah (Main)
     function renderDetail() {
         var d = st.all.filter(function(x) { return String(x.id) === String(st.sel); })[0];
         if (!d) {
@@ -29,8 +23,9 @@ window.bukaDoaEQuran = function () {
             return;
         }
 
+        // Judul cuma satu (nama doa saja)
         var h = '<div class="ic">' +
-                '<div class="bh">' + esc(d.nama) + ' — ' + esc(d.grup) + '</div>' +
+                '<div class="bh">' + esc(d.nama) + '</div>' +
                 '<div class="ar">' + esc(d.ar) + '</div>' +
                 (d.tr ? '<div class="lt">' + esc(d.tr) + '</div>' : '') +
                 '<div class="tr">' + esc(d.idn) + '</div>' +
@@ -39,19 +34,14 @@ window.bukaDoaEQuran = function () {
         elMain.innerHTML = h;
     }
 
-    // Isi opsi ke dalam dropdown kiri
     function isiDropdown(dataArray) {
         var h = '<option value="">Pilih Doa</option>';
         dataArray.forEach(function (d) {
             h += '<option value="' + esc(d.id) + '">' + esc(d.nama) + '</option>';
         });
         if(elK) elK.innerHTML = h;
-        
-        // Dropdown kanan hanya statis
-        if(elB) elB.innerHTML = '<option>Pembahasan</option>';
     }
 
-    // Event Listener saat dropdown KIRI diubah
     if (elK) {
         elK.addEventListener("change", function(e) {
             st.sel = e.target.value;
@@ -60,23 +50,21 @@ window.bukaDoaEQuran = function () {
         });
     }
 
-    // Event Listener saat mengetik di kotak pencarian
     if (elQ) {
         elQ.addEventListener("input", function(e) {
             var q = e.target.value.toLowerCase();
             var filter = st.all.filter(function(d) {
                 return (d.nama + " " + d.idn).toLowerCase().indexOf(q) >= 0;
             });
-
-            var h = '<option value="">' + (filter.length ? "Pilih Doa" : "Tidak ditemukan") + '</option>';
-            filter.forEach(function (d) {
-                h += '<option value="' + esc(d.id) + '">' + esc(d.nama) + '</option>';
-            });
-            if(elK) elK.innerHTML = h;
+            isiDropdown(filter);
+            // Jika doa yang sedang dipilih hilang dari filter, kosongkan tampilan
+            if (st.sel && !filter.some(function(d){ return String(d.id) === String(st.sel); })) {
+                st.sel = 0;
+                renderDetail();
+            }
         });
     }
 
-    // Mulai Proses
     window.addEventListener("ngpref", status);
     setTimeout(status, 2500);
 
@@ -88,7 +76,6 @@ window.bukaDoaEQuran = function () {
             var d = Array.isArray(j) ? j : (j && j.data);
             if (!Array.isArray(d) || !d.length) throw new Error("data kosong");
             
-            // Normalisasi data dari EQuran.id
             st.all = d.map(function(o) {
                 return {
                     id: o.id,
@@ -102,7 +89,7 @@ window.bukaDoaEQuran = function () {
             });
             
             isiDropdown(st.all);
-            renderDetail(); // Menampilkan pesan "Silakan pilih doa"
+            renderDetail();
         })
         .catch(function (e) {
             if(elMain) elMain.innerHTML = '<div class="msg">Gagal memuat doa (' + esc(e.message) + ').<br>Periksa koneksi internet.</div>';
