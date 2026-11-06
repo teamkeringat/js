@@ -1,5 +1,5 @@
 /* ============================================================
-   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL FIX
+   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL FIX 2
    ============================================================ */
 
 // --- FUNGSI 1: UNTUK MENU STATIS (Kitab, Kamus, Hadis) ---
@@ -120,6 +120,8 @@ window.bukaReader = function(config) {
         sb = b.sebutan || "Bab";
         if (b.catatan) h += '<p class="pg">' + esc(b.catatan) + "</p>";
         var bab = b.bab || [];
+        
+        // PERBAIKAN: Logika untuk menampilkan semua atau satu bab
         if (st.bi === "all") {
             bab.forEach(function (r, i) {
                 var k = d.id + ":" + i, on = st.ob[k] !== false;
@@ -130,9 +132,11 @@ window.bukaReader = function(config) {
             });
         } else {
             var r1 = bab[+st.bi];
-            if (r1) h += '<div class="dd on"><div class="hd"><span class="no">' + (+st.bi + 1) + '</span><span class="nm">' + esc(sb) + " " + (+st.bi + 1) + ". " + esc(r1.judul) +
-            (r1.arab ? '<div class="ar" style="font-size:calc(1.3rem * var(--z,1));margin-top:4px">' + esc(r1.arab) + "</div>" : "") +
-            '</span></div><div class="bd">' + isiBab(r1) + "</div></div>";
+            if (r1) {
+                h += '<div class="dd on"><div class="hd"><span class="no">' + (+st.bi + 1) + '</span><span class="nm">' + esc(sb) + " " + (+st.bi + 1) + ". " + esc(r1.judul) +
+                (r1.arab ? '<div class="ar" style="font-size:calc(1.3rem * var(--z,1));margin-top:4px">' + esc(r1.arab) + "</div>" : "") +
+                '</span></div><div class="bd">' + isiBab(r1) + "</div></div>";
+            }
         }
         return h;
     }
@@ -220,7 +224,11 @@ window.bukaReader = function(config) {
         elApp.addEventListener("mousedown", function (e) { if (e.target.id === "b" && !st.sel) { e.preventDefault(); e.target.blur(); peringatan(); } });
         elApp.addEventListener("change", function (e) {
             if (e.target.id === "k") pilih(+e.target.value || 0);
-            if (e.target.id === "b" && st.sel) { st.bi = e.target.value; view(); }
+            // PERBAIKAN: Saat dropdown kanan diubah, render ulang detail
+            if (e.target.id === "b" && st.sel) { 
+                st.bi = e.target.value; 
+                view(); 
+            }
         });
         elApp.addEventListener("click", function (e) {
             var t = e.target;
