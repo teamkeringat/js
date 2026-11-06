@@ -1,19 +1,17 @@
 /* ============================================================
-   FUNGSI KHUSUS: DOA EQURAN.ID (Versi Rapi)
+   FUNGSI KHUSUS: DOA EQURAN.ID (Mode Dropdown Mandiri)
    ============================================================ */
 window.bukaDoaEQuran = function () {
     var API = "https://equran.id/api/doa";
-    var app = document.getElementById("app");
-    var st = { all: [], q: "" };
+    var st = { all: [], sel: 0 };
 
-    // Elemen UI
+    // Ambil Elemen UI
     var elQ = document.getElementById("q");
-    var elK = document.getElementById("k"); // Dropdown Kiri (Kategori)
+    var elK = document.getElementById("k"); // Dropdown Kiri (Nama Doa)
     var elB = document.getElementById("b"); // Dropdown Kanan (Pembahasan)
     var elMain = document.getElementById("main");
     var elStat = document.getElementById("stat");
 
-    // Fungsi Bantuan
     function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 
     function status() {
@@ -23,76 +21,74 @@ window.bukaDoaEQuran = function () {
         else elStat.textContent = "⏳ Menunggu pengaturan Ngelingan...";
     }
 
-    // Render Daftar Doa (Masuk ke div #main)
-    function renderList() {
-        var q = st.q.toLowerCase();
-        var list = st.all.filter(function (d) {
-            return !q || (d.nama + " " + d.idn + " " + d.tr).toLowerCase().indexOf(q) >= 0;
-        });
-
-        var h = "";
-        if (!list.length) {
-            h = '<div class="msg">Doa tidak ditemukan.</div>';
-        } else {
-            list.forEach(function (d) {
-                h += '<div class="dd" data-id="' + esc(d.id) + '">' +
-                     '<div class="hd"><span class="no">' + esc(d.id) + '</span>' +
-                     '<div class="nm">' + esc(d.nama) + '</div>' +
-                     '<span class="ch">›</span></div>' +
-                     '<div class="bd">' +
-                     '<div class="ar">' + esc(d.ar) + '</div>' +
-                     (d.tr ? '<div class="lt">' + esc(d.tr) + '</div>' : '') +
-                     '<div class="tr">' + esc(d.idn) + '</div>' +
-                     (d.tentang ? '<div class="tn">' + esc(d.tentang) + '</div>' : '') +
-                     '</div></div>';
-            });
+    // Render isi doa di area bawah (Main)
+    function renderDetail() {
+        var d = st.all.filter(function(x) { return String(x.id) === String(st.sel); })[0];
+        if (!d) {
+            elMain.innerHTML = '<div class="msg">Silakan pilih doa terlebih dahulu dari menu di atas.</div>';
+            return;
         }
+
+        var h = '<div class="ic">' +
+                '<div class="bh">' + esc(d.nama) + ' — ' + esc(d.grup) + '</div>' +
+                '<div class="ar">' + esc(d.ar) + '</div>' +
+                (d.tr ? '<div class="lt">' + esc(d.tr) + '</div>' : '') +
+                '<div class="tr">' + esc(d.idn) + '</div>' +
+                (d.tentang ? '<div class="tn">' + esc(d.tentang) + '</div>' : '') +
+                '</div>';
         elMain.innerHTML = h;
     }
 
-    // Isi Dropdown Kiri (Kategori)
-    function isiDropdown() {
-        var grups = [];
-        st.all.forEach(function (d) { if (d.grup && grups.indexOf(d.grup) < 0) grups.push(d.grup); });
-        
-        var h = '<option value="">Semua Kategori</option>';
-        grups.forEach(function (g) { h += '<option value="' + esc(g) + '">' + esc(g) + '</option>'; });
+    // Isi opsi ke dalam dropdown kiri
+    function isiDropdown(dataArray) {
+        var h = '<option value="">Pilih Doa</option>';
+        dataArray.forEach(function (d) {
+            h += '<option value="' + esc(d.id) + '">' + esc(d.nama) + '</option>';
+        });
         if(elK) elK.innerHTML = h;
-
-        if(elB) elB.innerHTML = '<option>Pembahasan</option>'; // Dropdown kanan statis
+        
+        // Dropdown kanan hanya statis
+        if(elB) elB.innerHTML = '<option>Pembahasan</option>';
     }
 
-    // Event: Pencarian
+    // Event Listener saat dropdown KIRI diubah
+    if (elK) {
+        elK.addEventListener("change", function(e) {
+            st.sel = e.target.value;
+            if(st.sel) elK.classList.remove("ph");
+            renderDetail();
+        });
+    }
+
+    // Event Listener saat mengetik di kotak pencarian
     if (elQ) {
-        elQ.addEventListener("input", function (e) {
-            st.q = e.target.value;
-            renderList();
+        elQ.addEventListener("input", function(e) {
+            var q = e.target.value.toLowerCase();
+            var filter = st.all.filter(function(d) {
+                return (d.nama + " " + d.idn).toLowerCase().indexOf(q) >= 0;
+            });
+
+            var h = '<option value="">' + (filter.length ? "Pilih Doa" : "Tidak ditemukan") + '</option>';
+            filter.forEach(function (d) {
+                h += '<option value="' + esc(d.id) + '">' + esc(d.nama) + '</option>';
+            });
+            if(elK) elK.innerHTML = h;
         });
     }
 
-    // Event: Buka/Tutup Accordion
-    if (elMain) {
-        elMain.addEventListener("click", function (e) {
-            var hd = e.target.closest && e.target.closest(".hd");
-            if (hd) {
-                var box = hd.parentNode;
-                box.classList.toggle("on");
-            }
-        });
-    }
-
+    // Mulai Proses
     window.addEventListener("ngpref", status);
     setTimeout(status, 2500);
 
-    // Tarik Data
-    elMain.innerHTML = '<div class="msg">Memuat doa...</div>';
+    if(elMain) elMain.innerHTML = '<div class="msg">Memuat daftar doa...</div>';
+    
     fetch(API)
         .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
         .then(function (j) {
             var d = Array.isArray(j) ? j : (j && j.data);
             if (!Array.isArray(d) || !d.length) throw new Error("data kosong");
             
-            // Normalisasi data
+            // Normalisasi data dari EQuran.id
             st.all = d.map(function(o) {
                 return {
                     id: o.id,
@@ -105,10 +101,10 @@ window.bukaDoaEQuran = function () {
                 };
             });
             
-            isiDropdown();
-            renderList();
+            isiDropdown(st.all);
+            renderDetail(); // Menampilkan pesan "Silakan pilih doa"
         })
         .catch(function (e) {
-            elMain.innerHTML = '<div class="msg">Gagal memuat doa (' + esc(e.message) + ').<br>Periksa koneksi internet.</div>';
+            if(elMain) elMain.innerHTML = '<div class="msg">Gagal memuat doa (' + esc(e.message) + ').<br>Periksa koneksi internet.</div>';
         });
 };
