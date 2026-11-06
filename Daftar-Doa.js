@@ -1,6 +1,6 @@
 /* ============================================================
    DAFTAR DOA (Dari API EQuran.id)
-   Lokasi: https://teamkeringat.github.io/files/Daftar-Doa.js
+   Lokasi: https://teamkeringat.github.io/js/Daftar-Doa.js
    ============================================================ */
 
 // Fungsi ini akan dipanggil oleh mesin-reader untuk mengisi data doa
