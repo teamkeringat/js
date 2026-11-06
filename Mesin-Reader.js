@@ -1,5 +1,5 @@
 /* ============================================================
-   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL TOTAL
+   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL REVISI
    ============================================================ */
 
 // --- FUNGSI 1: UNTUK MENU STATIS (Kitab, Kamus, Hadis) ---
@@ -314,7 +314,6 @@ window.bukaDoaEQuran = function () {
 
     if(elMain) elMain.innerHTML = '<div class="msg">Memuat daftar doa...</div>';
     
-    // LANGSUNG TEMBAK API
     fetch(API)
         .then(function(r) {
             if (!r.ok) throw new Error("HTTP " + r.status);
