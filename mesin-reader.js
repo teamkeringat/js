@@ -1,8 +1,8 @@
 /* ============================================================
-   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL TOTAL
+   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL
    ============================================================ */
 
-// --- FUNGSI 1: UNTUK MENU STATIS / 3 KOTAK (Kitab Kuning, Kamus, Hadis) ---
+// --- FUNGSI 1: UNTUK MENU STATIS (Kitab, Kamus, Hadis) ---
 window.bukaReader = function(config) {
     var elJudul = document.getElementById("app-judul");
     if (elJudul) elJudul.textContent = config.judul || "Reader";
@@ -30,9 +30,10 @@ window.bukaReader = function(config) {
     function cariKitab(id) { return st.all.filter(function (x) { return x.id === id; })[0]; }
     function buku(d) { return d ? window.KITAB[d.nama] : null; }
 
+    // Pemuatan Data Induk (Dari Daftar-Kitab.js)
     function muatDataInduk() {
         var s = document.createElement("script");
-        s.src = config.sumberData;
+        s.src = config.sumberData; // Alamat Daftar-Kitab.js
         s.onload = function() {
             if (window.DATA_READER) {
                 var n = 0;
@@ -53,6 +54,7 @@ window.bukaReader = function(config) {
         document.head.appendChild(s);
     }
 
+    // Pemuatan Isi Kitab (Menggunakan window.KITAB_BASE)
     function muatIsi(d) {
         if (window.KITAB[d.nama]) { st.ld[d.id] = "ok"; return; }
         if (st.ld[d.id] === "load") return;
@@ -68,10 +70,12 @@ window.bukaReader = function(config) {
         s.onload = function () { fin(true); };
         s.onerror = function () { fin(false); };
         s.async = true;
-        s.src = "https://teamkeringat.github.io/KitabKuning/" + namaFile(d.nama);
+        // Menggunakan KITAB_BASE dari file data
+        s.src = (window.KITAB_BASE || "") + namaFile(d.nama);
         document.head.appendChild(s);
     }
 
+    // Render Item
     function itemHtml(x) {
         return '<div class="it">' +
         (x.no != null && x.no !== "" ? '<div class="bn">' + esc(x.no) + "</div>" : "") +
@@ -88,6 +92,7 @@ window.bukaReader = function(config) {
         return h;
     }
 
+    // Render Detail
     function detail() {
         var d = st.sel ? cariKitab(st.sel) : null;
         if (!d) {
@@ -128,6 +133,7 @@ window.bukaReader = function(config) {
         return h;
     }
 
+    // Render View
     function view() {
         var d = st.sel ? cariKitab(st.sel) : null, b = buku(d), sb = (b && b.sebutan) || "Bab";
         var elK = document.getElementById("k");
@@ -235,11 +241,9 @@ window.bukaReader = function(config) {
     muatDataInduk();
 };
 
-// --- FUNGSI 2: UNTUK MENU DOA / 2 KOTAK (API EQuran.id) ---
+// --- FUNGSI 2: UNTUK MENU DOA (API EQuran.id) ---
 window.bukaDoaEQuran = function () {
-    var API = "https://equran.id/api/doa";
     var st = { all: [], sel: 0 };
-
     var elQ = document.getElementById("q");
     var elK = document.getElementById("k");
     var elMain = document.getElementById("main");
@@ -307,28 +311,38 @@ window.bukaDoaEQuran = function () {
 
     if(elMain) elMain.innerHTML = '<div class="msg">Memuat daftar doa...</div>';
     
-    fetch(API)
-        .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-        .then(function (j) {
-            var d = Array.isArray(j) ? j : (j && j.data);
-            if (!Array.isArray(d) || !d.length) throw new Error("data kosong");
-            
-            st.all = d.map(function(o) {
-                return {
-                    id: o.id,
-                    grup: o.grup || "Doa Harian",
-                    nama: o.nama || "Tanpa Nama",
-                    ar: o.ar || "",
-                    tr: o.latin || o.tr || "",
-                    idn: o.arti || o.idn || "",
-                    tentang: o.tentang || ""
-                };
+    // Panggil file Daftar-Doa.js dari GitHub
+    var script = document.createElement("script");
+    script.src = "https://teamkeringat.github.io/files/Daftar-Doa.js";
+    script.onload = function() {
+        if (typeof window.muatDataDoa === 'function') {
+            window.muatDataDoa(function(data) {
+                if (data && data.length > 0) {
+                    var n = 0;
+                    data.forEach(function(g) {
+                        g[2].forEach(function(r) {
+                            n++;
+                            st.all.push({
+                                id: n,
+                                grup: g[0],
+                                nama: r[0],
+                                ar: r[1],
+                                tr: r[3], // Latin
+                                idn: r[4], // Arti
+                                tentang: r[5]
+                            });
+                        });
+                    });
+                    isiDropdown(st.all);
+                    renderDetail();
+                } else {
+                    if(elMain) elMain.innerHTML = '<div class="msg">Data doa kosong atau gagal dimuat.</div>';
+                }
             });
-            
-            isiDropdown(st.all);
-            renderDetail();
-        })
-        .catch(function (e) {
-            if(elMain) elMain.innerHTML = '<div class="msg">Gagal memuat doa (' + esc(e.message) + ').<br>Periksa koneksi internet.</div>';
-        });
+        }
+    };
+    script.onerror = function() {
+        if(elMain) elMain.innerHTML = '<div class="msg">Gagal memuat file Daftar-Doa.js dari GitHub.</div>';
+    };
+    document.head.appendChild(script);
 };
