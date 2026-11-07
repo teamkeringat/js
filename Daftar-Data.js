@@ -7,7 +7,7 @@ window.DATA_READER = [
     
 ["Doa Fatihah 2", "دعاء الفاتحة ٢", "Tim Penyusun", "Tim Penyusun", "Doa Fatihah 2", "Doa Fatihah versi 2.", "Farid"],
 
-["Doa Fatihah 3", "دعاء الفاتحة 3", "Keringat", "Ngelingan", "Doa Fatihah 3", "Doa Fatihah versi 3.", "P"]
+["Doa Fatihah 3", "دعاء الفاتحة ٣", "Keringat", "Ngelingan", "Doa Fatihah 3", "Doa Fatihah versi 3.", "P"]
 
 
   ]]
