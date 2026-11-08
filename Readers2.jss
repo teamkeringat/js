@@ -1,5 +1,5 @@
 /* =========================================================
-   READERS.JS — Mesin Universal (Fix Mode Arab Saja via JS)
+   READERS.JS — Mesin Universal (Fix Mode Arab Saja)
    ========================================================= */
 (function () {
   "use strict";
@@ -25,12 +25,23 @@
   function renderBab(bab) {
     var h = '<div class="ic">';
     if (bab.judul) h += '<div class="bh">' + esc(bab.judul) + "</div>";
+    
+    // 1. GABUNGKAN SEMUA TEKS ARAB JADI SATU PARAGRAF
+    var gabungAr = "";
     (bab.isi || []).forEach(function (it) {
-      if (it.ar) h += '<div class="ar">' + esc(it.ar) + "</div>";
+      if (it.ar) gabungAr += it.ar + " "; 
+    });
+    if (gabungAr) {
+      h += '<div class="ar">' + esc(gabungAr.trim()) + "</div>";
+    }
+
+    // 2. TAMPILKAN LATIN & TERJEMAHAN
+    (bab.isi || []).forEach(function (it) {
       if (it.lt) h += '<div class="lt">' + esc(it.lt) + "</div>";
       if (it.tr) h += '<div class="tr">' + esc(it.tr) + "</div>";
       if (it.tn) h += '<div class="tn">' + esc(it.tn) + "</div>";
     });
+
     if (bab.penjelasan) {
       h += '<div class="pj">Penjelasan</div>';
       h += '<div class="pg">' + esc(bab.penjelasan) + "</div>";
@@ -69,75 +80,13 @@
     var elNF = document.getElementById("NF") || document.getElementById("k");
     var elP  = document.getElementById("P");
     var elH  = document.getElementById("H")  || document.getElementById("main");
-
     var MODE3 = !!elP;
 
     if (!elC || !elNF || !elH) {
-      console.error("[Reader] Elemen #C/#q, #NF/#k, #H/#main tidak ditemukan");
+      console.error("[Reader] Elemen penting tidak ditemukan");
       return;
     }
     if (cfg.placeholderCari) elC.placeholder = cfg.placeholderCari;
-
-    /* ================ FITUR PENGGABUNG TEKS ARAB ================ */
-    function setupArabModeObserver() {
-      var htmlEl = document.documentElement;
-
-      function updateArabMode() {
-        var isArab = htmlEl.classList.contains("ng-arab");
-        var icElements = elH.querySelectorAll(".ic");
-
-        icElements.forEach(function (ic) {
-          if (isArab) {
-            if (!ic.dataset.merged) {
-              var arElements = Array.from(ic.querySelectorAll(".ar"));
-              if (arElements.length > 0) {
-                // Buat 1 div penampung
-                var mergedDiv = document.createElement("div");
-                mergedDiv.className = "ar merged-ar";
-                // Gabungkan semua teks
-                mergedDiv.textContent = arElements.map(function(el) { return el.textContent.trim(); }).join(" ");
-
-                // Sembunyikan teks asli
-                arElements.forEach(function(el) { el.style.setProperty("display", "none", "important"); });
-
-                // Sisipkan di atas teks pertama
-                arElements[0].parentNode.insertBefore(mergedDiv, arElements[0]);
-                ic.dataset.merged = "true";
-              }
-            }
-          } else {
-            if (ic.dataset.merged) {
-              // Hapus teks gabungan
-              var mergedDiv = ic.querySelector(".merged-ar");
-              if (mergedDiv) mergedDiv.remove();
-
-              // Munculkan teks asli lagi
-              var arElements = ic.querySelectorAll(".ar");
-              arElements.forEach(function(el) { el.style.removeProperty("display"); });
-
-              delete ic.dataset.merged;
-            }
-          }
-        });
-      }
-
-      updateArabMode(); // Jalankan pertama kali
-
-      // Pantau jika tombol "Arab Saja" diklik (class html berubah)
-      var observer = new MutationObserver(function (mutations) {
-        mutations.forEach(function (mutation) {
-          if (mutation.attributeName === "class") {
-            updateArabMode();
-          }
-        });
-      });
-      observer.observe(htmlEl, { attributes: true });
-
-      return updateArabMode;
-    }
-
-    var updateArabMode = setupArabModeObserver();
-    /* ============================================================ */
 
     function muatDaftar() {
       if (cfg.sumberData) {
@@ -174,8 +123,7 @@
       var kunci = Object.keys(window.KONTEN || {});
       elNF.innerHTML = "";
       var optPilih = document.createElement("option");
-      optPilih.value = "";
-      optPilih.textContent = cfg.labelPilih;
+      optPilih.value = ""; optPilih.textContent = cfg.labelPilih;
       elNF.appendChild(optPilih);
 
       kunci.forEach(function (k) {
@@ -269,12 +217,6 @@
       }
 
       elH.innerHTML = html || '<div class="msg">' + esc(cfg.labelKosong) + "</div>";
-      
-      // Panggil fungsi gabung Arab setiap kali konten berganti
-      if (typeof updateArabMode === 'function') {
-        updateArabMode();
-      }
-
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
