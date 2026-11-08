@@ -1,9 +1,9 @@
-window.DATA_BASE = "https://teamkeringat.github.io/Data/";
-window.DATA_READER = [
-  ["Doa Al-Fatihah", "Kumpulan Doa Al-Fatihah.", [
-    // Format: [Judul, Penyusun, Sumber, NAMA FILE]
-    ["Doa Al-Fatihah 1", "Syeikh Abdul Qodir Jaelani", "Ngelingan", "DoaFatihah1"],
-    ["Doa Al-Fatihah 2", "Syeikh Abdul Qodir Jaelani", "Ngelingan", "DoaFatihah2"],
-    ["Doa Al-Fatihah 3", "Syeikh Abdul Qodir Jaelani", "Ngelingan", "DoaFatihah3"]
-  ]]
+/* =========================================================
+   DAFTAR DATA — DOA AL-FATIHAH
+   Daftar file data yang akan dimuat oleh Reader.js
+   ========================================================= */
+window.DAFTAR_DATA = [
+  "https://teamkeringat.github.io/Data/DoaFatihah1.js",
+  "https://teamkeringat.github.io/Data/DoaFatihah2.js",
+  "https://teamkeringat.github.io/Data/DoaFatihah3.js"
 ];
