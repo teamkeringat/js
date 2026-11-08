@@ -1,7 +1,5 @@
 /* =========================================================
-   READERS.JS — Mesin Universal (dipakai Pemanggil1 & Pemanggil2)
-   - Menerima parameter: sumberData + kunciData
-   - Support 2 layout: 2 kotak & 3 kotak (auto-deteksi)
+   READERS.JS — Mesin Universal (Fix Mode Arab Saja via JS)
    ========================================================= */
 (function () {
   "use strict";
@@ -80,6 +78,67 @@
     }
     if (cfg.placeholderCari) elC.placeholder = cfg.placeholderCari;
 
+    /* ================ FITUR PENGGABUNG TEKS ARAB ================ */
+    function setupArabModeObserver() {
+      var htmlEl = document.documentElement;
+
+      function updateArabMode() {
+        var isArab = htmlEl.classList.contains("ng-arab");
+        var icElements = elH.querySelectorAll(".ic");
+
+        icElements.forEach(function (ic) {
+          if (isArab) {
+            if (!ic.dataset.merged) {
+              var arElements = Array.from(ic.querySelectorAll(".ar"));
+              if (arElements.length > 0) {
+                // Buat 1 div penampung
+                var mergedDiv = document.createElement("div");
+                mergedDiv.className = "ar merged-ar";
+                // Gabungkan semua teks
+                mergedDiv.textContent = arElements.map(function(el) { return el.textContent.trim(); }).join(" ");
+
+                // Sembunyikan teks asli
+                arElements.forEach(function(el) { el.style.setProperty("display", "none", "important"); });
+
+                // Sisipkan di atas teks pertama
+                arElements[0].parentNode.insertBefore(mergedDiv, arElements[0]);
+                ic.dataset.merged = "true";
+              }
+            }
+          } else {
+            if (ic.dataset.merged) {
+              // Hapus teks gabungan
+              var mergedDiv = ic.querySelector(".merged-ar");
+              if (mergedDiv) mergedDiv.remove();
+
+              // Munculkan teks asli lagi
+              var arElements = ic.querySelectorAll(".ar");
+              arElements.forEach(function(el) { el.style.removeProperty("display"); });
+
+              delete ic.dataset.merged;
+            }
+          }
+        });
+      }
+
+      updateArabMode(); // Jalankan pertama kali
+
+      // Pantau jika tombol "Arab Saja" diklik (class html berubah)
+      var observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+          if (mutation.attributeName === "class") {
+            updateArabMode();
+          }
+        });
+      });
+      observer.observe(htmlEl, { attributes: true });
+
+      return updateArabMode;
+    }
+
+    var updateArabMode = setupArabModeObserver();
+    /* ============================================================ */
+
     function muatDaftar() {
       if (cfg.sumberData) {
         return muatScript(cfg.sumberData).then(function () {
@@ -93,7 +152,6 @@
 
     function mulai() {
       elH.innerHTML = '<div class="msg">Memuat...</div>';
-
       muatDaftar().then(function (daftar) {
         if (!daftar.length) {
           elH.innerHTML = '<div class="msg">Daftar data kosong atau gagal dimuat.</div>';
@@ -102,14 +160,11 @@
         var chain = Promise.resolve();
         daftar.forEach(function (url) {
           chain = chain.then(function () {
-            return muatScript(url).catch(function (e) {
-              console.warn("[Reader]", e.message);
-            });
+            return muatScript(url).catch(function (e) { console.warn("[Reader]", e.message); });
           });
         });
         return chain.then(initUI);
-      })
-      .catch(function (e) {
+      }).catch(function (e) {
         console.error("[Reader]", e);
         elH.innerHTML = '<div class="msg">Gagal memuat data.<br><small>' + esc(e.message) + "</small></div>";
       });
@@ -117,7 +172,6 @@
 
     function initUI() {
       var kunci = Object.keys(window.KONTEN || {});
-
       elNF.innerHTML = "";
       var optPilih = document.createElement("option");
       optPilih.value = "";
@@ -126,15 +180,11 @@
 
       kunci.forEach(function (k) {
         var o = document.createElement("option");
-        o.value = k;
-        o.textContent = k;
+        o.value = k; o.textContent = k;
         elNF.appendChild(o);
       });
 
-      if (!kunci.length) {
-        elH.innerHTML = '<div class="msg">Belum ada data.</div>';
-        return;
-      }
+      if (!kunci.length) { elH.innerHTML = '<div class="msg">Belum ada data.</div>'; return; }
 
       setupSearch(kunci);
 
@@ -161,15 +211,12 @@
 
     function isiPembahasan(nama) {
       if (!elP) return;
-
       var data = window.KONTEN[nama] || {};
       var babList = data.bab || [];
 
       elP.innerHTML = "";
-
       var optAll = document.createElement("option");
-      optAll.value = "all";
-      optAll.textContent = "Semua Bab";
+      optAll.value = "all"; optAll.textContent = "Semua Bab";
       elP.appendChild(optAll);
 
       if (babList.length) {
@@ -177,8 +224,7 @@
         ogBab.label = "Per Bab";
         babList.forEach(function (bab, i) {
           var o = document.createElement("option");
-          o.value = "b:" + i;
-          o.textContent = "Bab " + (i + 1) + ": " + (bab.judul || "-");
+          o.value = "b:" + i; o.textContent = "Bab " + (i + 1) + ": " + (bab.judul || "-");
           ogBab.appendChild(o);
         });
         elP.appendChild(ogBab);
@@ -199,21 +245,15 @@
         });
         elP.appendChild(ogAyat);
       }
-
       elP.value = "all";
     }
 
     function renderPilihan(nama, pilihan) {
       var data = window.KONTEN[nama];
-      if (!data) {
-        elH.innerHTML = '<div class="msg">Data tidak ditemukan.</div>';
-        return;
-      }
-
+      if (!data) { elH.innerHTML = '<div class="msg">Data tidak ditemukan.</div>'; return; }
       if (!MODE3) pilihan = "all";
 
       var html = "";
-
       if (pilihan === "all") {
         (data.bab || []).forEach(function (bab) { html += renderBab(bab); });
       } else if (pilihan.indexOf("b:") === 0) {
@@ -229,6 +269,12 @@
       }
 
       elH.innerHTML = html || '<div class="msg">' + esc(cfg.labelKosong) + "</div>";
+      
+      // Panggil fungsi gabung Arab setiap kali konten berganti
+      if (typeof updateArabMode === 'function') {
+        updateArabMode();
+      }
+
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
@@ -236,27 +282,17 @@
       elC.addEventListener("input", function () {
         var q = this.value.trim().toLowerCase();
         elSG.innerHTML = "";
-
         if (!q) { elSG.classList.remove("on"); return; }
 
         var hasil = [];
-
         kunci.forEach(function (nama) {
-          if (nama.toLowerCase().indexOf(q) !== -1) {
-            hasil.push({ nama: nama, label: nama, tipe: "doa" });
-          }
+          if (nama.toLowerCase().indexOf(q) !== -1) hasil.push({ nama: nama, label: nama, tipe: "doa" });
         });
-
         kunci.forEach(function (nama) {
           var data = window.KONTEN[nama];
           (data.bab || []).forEach(function (bab, i) {
             if (bab.judul && bab.judul.toLowerCase().indexOf(q) !== -1) {
-              hasil.push({
-                nama: nama,
-                babIdx: i,
-                label: nama + " → Bab " + (i + 1) + ": " + bab.judul,
-                tipe: "bab"
-              });
+              hasil.push({ nama: nama, babIdx: i, label: nama + " → Bab " + (i + 1) + ": " + bab.judul, tipe: "bab" });
             }
           });
         });
@@ -269,9 +305,7 @@
           li.style.cssText = "padding:9px 10px;cursor:pointer";
           li.textContent = h.label;
           li.addEventListener("click", function () {
-            elC.value = "";
-            elSG.classList.remove("on");
-            elSG.innerHTML = "";
+            elC.value = ""; elSG.classList.remove("on"); elSG.innerHTML = "";
             elNF.value = h.nama;
             isiPembahasan(h.nama);
             if (h.tipe === "bab" && MODE3) {
@@ -284,14 +318,11 @@
           });
           elSG.appendChild(li);
         });
-
         elSG.classList.add("on");
       });
 
       document.addEventListener("click", function (e) {
-        if (!elSG.contains(e.target) && e.target !== elC) {
-          elSG.classList.remove("on");
-        }
+        if (!elSG.contains(e.target) && e.target !== elC) elSG.classList.remove("on");
       });
     }
 
