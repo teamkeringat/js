@@ -10,7 +10,7 @@ window.bukaReader = function(config) {
     function muatData() {
         // Cek apakah DaftarData.js berhasil dimuat
         if (typeof window.DATA_READER === "undefined") {
-            document.getElementById("H").innerHTML = '<div class="msg">File Daftar-Data.js gagal dimuat atau tidak ditemukan di folder js/</div>';
+            document.getElementById("H").innerHTML = '<div class="msg">File DaftarData.js gagal dimuat atau tidak ditemukan di folder js/</div>';
             return;
         }
         
