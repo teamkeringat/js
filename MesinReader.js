@@ -8,7 +8,7 @@ window.bukaReader = function(config) {
     function esc(t) { return String(t || "").replace(/[&<>"]/g, function (c) { return { "&": "&", "<": "<", ">": ">", '"': '"' }[c]; }); }
 
     function muatData() {
-        // Cek apakah Daftar-Data.js berhasil dimuat
+        // Cek apakah DaftarData.js berhasil dimuat
         if (typeof window.DATA_READER === "undefined") {
             document.getElementById("H").innerHTML = '<div class="msg">File Daftar-Data.js gagal dimuat atau tidak ditemukan di folder js/</div>';
             return;
