@@ -1,6 +1,6 @@
 /* =========================================================
    READER2.JS — Mesin Pembaca Doa Al-Fatihah
-   - Daftar file data sudah include di dalam (tanpa Daftar-Data.js)
+   - Daftar file data sudah include di dalam (tanpa DaftarData.js)
    - Dropdown kiri : pilih doa
    - Dropdown kanan: Pembahasan (Semua Bab / Per Bab / Per Ayat)
    - Kotak cari    : cari nama doa atau judul bab
@@ -8,7 +8,7 @@
 (function () {
   "use strict";
 
-  /* ========== KONFIGURASI DAFTAR DATA ========== */
+  /* ========== DAFTAR FILE DATA (tambah di sini kalau ada doa baru) ========== */
   var DAFTAR_DATA = [
     "https://teamkeringat.github.io/Data/DoaFatihah1.js",
     "https://teamkeringat.github.io/Data/DoaFatihah2.js",
