@@ -1,5 +1,5 @@
 /* ============================================================
-   MESIN READER UNIVERSAL (MesinReader.js) - ID BARU
+   MESIN READER UNIVERSAL (MesinReader.js) - REVISI BOSS
    ============================================================ */
 window.bukaReader = function(config) {
     var elJudul = document.getElementById("app-judul");
@@ -39,6 +39,7 @@ window.bukaReader = function(config) {
                 window.DATA_READER.forEach(function (g) {
                     g[2].forEach(function (r) {
                         n++;
+                        // r[0]=judul, r[1]=arab, r[2]=penyusun, r[3]=sumber, r[4]=deskripsi, r[5]=NAMA FILE, r[6]=kontributor
                         st.all.push({ id: n, grup: g[0], intro: g[1], nama: r[0], ar: r[1], ap: r[2], pl: r[3], arti: r[4], idn: r[5], lv: r[6] });
                     });
                 });
@@ -47,7 +48,7 @@ window.bukaReader = function(config) {
             }
         };
         s.onerror = function() {
-            var m = document.getElementById("H"); // Halaman
+            var m = document.getElementById("H"); 
             if(m) m.innerHTML = '<div class="msg">Gagal memuat data dari ' + config.sumberData + '</div>';
         };
         document.head.appendChild(s);
@@ -68,7 +69,12 @@ window.bukaReader = function(config) {
         s.onload = function () { fin(true); };
         s.onerror = function () { fin(false); };
         s.async = true;
-        s.src = (window.DATA_BASE || "") + namaFile(d.nama);
+        
+        // PERBAIKAN: Gunakan d.idn (nama file asli) jika ada, jika tidak pakai namaFile(d.nama)
+        var fileTujuan = d.idn ? d.idn : namaFile(d.nama);
+        if (!fileTujuan.toLowerCase().endsWith(".js")) fileTujuan += ".js";
+        
+        s.src = (window.DATA_BASE || "") + fileTujuan;
         document.head.appendChild(s);
     }
 
@@ -94,16 +100,30 @@ window.bukaReader = function(config) {
             return '<div class="msg">' + (st.warn ? config.labelKosong + "<br>" : "") +
             "Ketik nama di kotak pencarian, atau tekan " + config.labelPilih + " di kiri.</div>";
         }
-        var h = '<div class="ic">' +
-        '<div class="ar">' + esc(d.ar) + '</div>' +
-        '<div class="ap">' + esc(d.ap) + "</div>" +
-        '<div class="bh">' + esc(d.nama) + " — " + esc(d.arti) + "</div>" +
-        '<div class="tn">' + esc(d.pl) + " · " + esc(d.grup) + " · " + esc(LV[d.lv] || "") + "</div>" +
-        '<div class="tn">' + esc(d.idn) + "</div></div>";
+        
+        // PERBAIKAN: Bersihkan tampilan dari tanda setrip (—) jika data kosong
+        var h = '<div class="ic">';
+        if (d.ar) h += '<div class="ar">' + esc(d.ar) + '</div>';
+        if (d.ap) h += '<div class="ap">' + esc(d.ap) + "</div>";
+        
+        h += '<div class="bh">' + esc(d.nama);
+        if (d.arti) h += " — " + esc(d.arti);
+        h += "</div>";
+        
+        var meta = [];
+        if (d.pl) meta.push(esc(d.pl));
+        if (d.grup) meta.push(esc(d.grup));
+        if (LV[d.lv]) meta.push(esc(LV[d.lv]));
+        
+        if (meta.length > 0) {
+            h += '<div class="tn">' + meta.join(" · ") + "</div>";
+        }
+        h += '</div>';
+
         var b = konten(d), sb;
         if (!b) {
             if (st.ld[d.id] === "fail") {
-                return h + '<div class="msg">Isi belum tersedia atau gagal dimuat.<br>File: ' + esc(namaFile(d.nama)) +
+                return h + '<div class="msg">Isi belum tersedia atau gagal dimuat.<br>File: ' + esc(d.idn || namaFile(d.nama)) +
                 '<br><br><a href="#" data-retry="1" style="color:#c9b86a">Coba lagi</a></div>';
             }
             return h + '<div class="msg">⏳ Memuat isi...</div>';
@@ -131,8 +151,8 @@ window.bukaReader = function(config) {
 
     function view() {
         var d = st.sel ? cariItem(st.sel) : null, b = konten(d), sb = (b && b.sebutan) || "Bab";
-        var elK = document.getElementById("NF"); // Nama File
-        var elB = document.getElementById("P");  // Pembahasan
+        var elK = document.getElementById("NF"); 
+        var elB = document.getElementById("P");  
         
         if (elK) {
             var hk = '<option value=""' + (d ? "" : " selected") + ">" + config.labelPilih + "</option>";
@@ -157,7 +177,7 @@ window.bukaReader = function(config) {
             elB.innerHTML = hb;
         }
         
-        var main = document.getElementById("H"); // Halaman
+        var main = document.getElementById("H"); 
         if (main) main.innerHTML = detail();
     }
 
@@ -233,5 +253,3 @@ window.bukaReader = function(config) {
     if(elB && !elB.innerHTML.trim()) elB.innerHTML = '<option value="all">Pembahasan</option>';
     muatDataInduk();
 };
-
-
