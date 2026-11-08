@@ -2,14 +2,15 @@ window.bukaReader = function(config) {
     var elCari = document.getElementById("C");
     if (elCari) elCari.placeholder = config.placeholderCari || "Cari...";
     
-    var st = { all: [], sel: 0 };
+    var st = { all: [], sel: 0, ob: {} };
     window.KONTEN = window.KONTEN || {};
 
     function esc(t) { return String(t || "").replace(/[&<>"]/g, function (c) { return { "&": "&", "<": "<", ">": ">", '"': '"' }[c]; }); }
 
     function muatData() {
-        if (!window.DATA_READER) {
-            document.getElementById("H").innerHTML = '<div class="msg">Daftar-Data.js tidak ditemukan.</div>';
+        // Cek apakah Daftar-Data.js berhasil dimuat
+        if (typeof window.DATA_READER === "undefined") {
+            document.getElementById("H").innerHTML = '<div class="msg">File Daftar-Data.js gagal dimuat atau tidak ditemukan di folder js/</div>';
             return;
         }
         
@@ -17,6 +18,7 @@ window.bukaReader = function(config) {
         window.DATA_READER.forEach(function (grup) {
             grup[2].forEach(function (item) {
                 n++;
+                // item[0]=Judul, item[1]=Penyusun, item[2]=Sumber, item[3]=NAMA FILE ASLI
                 st.all.push({ id: n, nama: item[0], penyusun: item[1], sumber: item[2], file: item[3] });
             });
         });
@@ -36,28 +38,24 @@ window.bukaReader = function(config) {
     }
 
     function panggilFile(item) {
-        // Kalau file sudah pernah dibuka, langsung tampilkan (INSTAN)
-        if (window.KONTEN[item.nama]) { 
-            renderHalaman(); 
-            return; 
-        }
+        if (window.KONTEN[item.nama]) { renderHalaman(); return; }
         
         document.getElementById("H").innerHTML = '<div class="msg">Memuat isi...</div>';
         
         var script = document.createElement("script");
-        // Gunakan DATA_BASE, kalau kosong berarti ambil dari folder lokal
+        // Memanggil file sesuai isi urutan ke-4 (item.file)
         script.src = (window.DATA_BASE || "") + item.file + ".js";
         
         script.onload = function() {
             if (window.KONTEN[item.nama]) {
                 renderHalaman();
             } else {
-                document.getElementById("H").innerHTML = '<div class="msg">File ' + item.file + '.js dimuat, tapi kunci KONTEN salah.<br>Pastikan di dalam file tertulis: window.KONTEN["' + item.nama + '"]</div>';
+                document.getElementById("H").innerHTML = '<div class="msg">File ' + item.file + '.js dimuat, tapi kunci KONTEN tidak cocok.<br>Pastikan di dalam file tertulis: window.KONTEN["' + item.nama + '"]</div>';
             }
         };
         
         script.onerror = function() {
-            document.getElementById("H").innerHTML = '<div class="msg">Gagal memanggil file: <b>' + item.file + '.js</b>.<br>Pastikan file ada di folder yang sama.</div>';
+            document.getElementById("H").innerHTML = '<div class="msg">Gagal memanggil file: <b>' + item.file + '.js</b>.<br>Pastikan file tersebut ada di folder Data/</div>';
         };
         
         document.head.appendChild(script);
@@ -76,46 +74,67 @@ window.bukaReader = function(config) {
         var konten = window.KONTEN[item.nama];
         
         var html = '';
+        
         html += '<div class="ic">';
         html += '<div class="bh">' + esc(item.nama) + '</div>';
         if (item.penyusun) html += '<div class="tn" style="text-align:center">' + esc(item.penyusun) + ' · ' + esc(item.sumber) + '</div>';
         html += '</div>';
 
         if (konten && konten.bab) {
-            konten.bab.forEach(function(bab) {
-                html += '<div class="dd on">';
-                html += '<div class="hd"><span class="nm">' + esc(bab.judul) + '</span></div>';
+            konten.bab.forEach(function(bab, i) {
+                var key = item.id + ":" + i;
+                var isOpen = st.ob[key] !== false;
+
+                html += '<div class="dd' + (isOpen ? " on" : "") + '" data-b="' + key + '">';
+                html += '<div class="hd"><span class="nm">' + esc(bab.judul) + '</span><span class="ch">›</span></div>';
                 html += '<div class="bd">';
+                
                 if (bab.isi) {
                     bab.isi.forEach(function(baris) {
                         if (baris.ar) html += '<div class="ar">' + esc(baris.ar) + '</div>';
                         if (baris.tr) html += '<div class="tr">' + esc(baris.tr) + '</div>';
                     });
                 }
+                
                 if (bab.penjelasan) {
-                    html += '<div class="pj" style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">';
-                    html += '<b>Penjelasan:</b><br>' + esc(bab.penjelasan);
-                    html += '</div>';
+                    html += '<div class="pj"><b>Penjelasan:</b><br>' + esc(bab.penjelasan) + '</div>';
                 }
+                
                 html += '</div></div>';
             });
         } else {
-            html += '<div class="msg">Isi doa kosong.</div>';
+            html += '<div class="msg">Isi doa kosong atau format tidak sesuai.</div>';
         }
 
         divH.innerHTML = html;
-        window.scrollTo(0, 0); // Scroll ke atas otomatis saat ganti doa
     }
 
-    document.getElementById("NF").addEventListener("change", function(e) {
-        st.sel = parseInt(e.target.value) || 0;
-        if (st.sel) {
-            var item = st.all.filter(function(x){ return x.id === st.sel; })[0];
-            panggilFile(item);
-        } else {
-            renderHalaman();
-        }
-    });
+    var elNF = document.getElementById("NF");
+    if (elNF) {
+        elNF.addEventListener("change", function(e) {
+            st.sel = parseInt(e.target.value) || 0;
+            if (st.sel) {
+                var item = st.all.filter(function(x){ return x.id === st.sel; })[0];
+                panggilFile(item);
+            } else {
+                renderHalaman();
+            }
+        });
+    }
+
+    var elH = document.getElementById("H");
+    if (elH) {
+        elH.addEventListener("click", function(e) {
+            var hd = e.target.closest(".hd");
+            if (hd) {
+                var dd = hd.parentNode;
+                var key = dd.getAttribute("data-b");
+                var isOpen = st.ob[key] === false; 
+                st.ob[key] = isOpen;
+                dd.classList.toggle("on", isOpen);
+            }
+        });
+    }
 
     muatData();
 };
