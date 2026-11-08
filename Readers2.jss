@@ -1,5 +1,5 @@
 /* =========================================================
-   READERS.JS — Mesin Universal (Fix Mode Arab Saja)
+   READERS.JS — Mesin Universal (Fast Loading + Fix Arab)
    ========================================================= */
 (function () {
   "use strict";
@@ -10,12 +10,13 @@
     });
   }
 
+  // muatScript diubah menjadi async = true (tidak memblokir halaman)
   function muatScript(src) {
     return new Promise(function (resolve, reject) {
       if (document.querySelector('script[src="' + src + '"]')) return resolve(src);
       var s = document.createElement("script");
       s.src = src;
-      s.async = false;
+      s.async = true; 
       s.onload  = function () { resolve(src); };
       s.onerror = function () { reject(new Error("Gagal memuat: " + src)); };
       document.head.appendChild(s);
@@ -26,7 +27,7 @@
     var h = '<div class="ic">';
     if (bab.judul) h += '<div class="bh">' + esc(bab.judul) + "</div>";
     
-    // 1. GABUNGKAN SEMUA TEKS ARAB JADI SATU PARAGRAF
+    // Gabungkan teks Arab jadi satu paragraf
     var gabungAr = "";
     (bab.isi || []).forEach(function (it) {
       if (it.ar) gabungAr += it.ar + " "; 
@@ -35,7 +36,7 @@
       h += '<div class="ar">' + esc(gabungAr.trim()) + "</div>";
     }
 
-    // 2. TAMPILKAN LATIN & TERJEMAHAN
+    // Tampilkan latin & terjemahan
     (bab.isi || []).forEach(function (it) {
       if (it.lt) h += '<div class="lt">' + esc(it.lt) + "</div>";
       if (it.tr) h += '<div class="tr">' + esc(it.tr) + "</div>";
@@ -106,13 +107,17 @@
           elH.innerHTML = '<div class="msg">Daftar data kosong atau gagal dimuat.</div>';
           return;
         }
-        var chain = Promise.resolve();
-        daftar.forEach(function (url) {
-          chain = chain.then(function () {
-            return muatScript(url).catch(function (e) { console.warn("[Reader]", e.message); });
-          });
+        
+        // LOAD PARALEL: Tarik semua file secara bersamaan, bukan berantai
+        var promises = daftar.map(function (url) {
+          return muatScript(url).catch(function (e) { console.warn("[Reader]", e.message); });
         });
-        return chain.then(initUI);
+
+        // Tunggu SEMUA file selesai dimuat, baru tampilkan
+        Promise.all(promises).then(function() {
+            initUI();
+        });
+
       }).catch(function (e) {
         console.error("[Reader]", e);
         elH.innerHTML = '<div class="msg">Gagal memuat data.<br><small>' + esc(e.message) + "</small></div>";
