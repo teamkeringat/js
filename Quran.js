@@ -1,12 +1,19 @@
-/* ===================================================
-   Quran.js - Juz Amma Reader Engine
-   https://teamkeringat.github.io/js/Quran.js
-   =================================================== */
+/* Shared JS Al-Qur'an - EQuran.id API v2 */
 (function () {
   var BASE = "https://equran.id/api/v2", PER = 10;
-  var PILIH = [1, 114, 113, 112, 111, 110, 109, 108, 107, 106, 105, 104, 103, 102, 101, 100,
-               99, 98, 97, 96, 95, 94, 93, 92, 91, 90, 89, 88, 87, 86, 85, 84, 83, 82, 81, 80, 79, 78];
   var app = document.getElementById("app");
+  if (!app) return;
+
+  // Membaca konfigurasi mode dari HTML
+  var cfg = window.QURAN_CONFIG || { mode: 'full' };
+  var PILIH = null;
+  
+  if (cfg.mode === 'pilihan') {
+    PILIH = [36, 55, 67, 56, 18]; // Yasin, Ar-Rahman, Al-Mulk, Al-Waqiah, Al-Kahfi
+  } else if (cfg.mode === 'juzamma') {
+    PILIH = [1, 114, 113, 112, 111, 110, 109, 108, 107, 106, 105, 104, 103, 102, 101, 100, 99, 98, 97, 96, 95, 94, 93, 92, 91, 90, 89, 88, 87, 86, 85, 84, 83, 82, 81, 80, 79, 78];
+  }
+
   var st = { list: [], s: null, tafsir: null, page: 0, qari: "05", auto: true, playing: -1, whole: false, cari: "", _focusCari: false };
   var au = new Audio();
 
@@ -21,7 +28,9 @@
     while ((idx = t.indexOf(ql, i)) > -1) { out += esc(text.slice(i, idx)); out += '<span class="hl">' + esc(text.slice(idx, idx + q.length)) + "</span>"; i = idx + q.length; }
     return out + esc(text.slice(i));
   }
+
   function posisiSurat(nomor) {
+    if (cfg.mode === 'full') return nomor;
     for (var k = 0; k < st.list.length; k++) { if (st.list[k].nomor === nomor) return k + 1; }
     return nomor;
   }
@@ -99,7 +108,9 @@
     var h = '<div class="w"><div class="top">';
     h += '<div class="bar"><input id="cari" type="text" placeholder="Cari Surat" value="' + esc(st.cari) + '"></div>';
     h += '<div class="bar"><select id="sel">';
-    st.list.forEach(function (x, idx) { h += '<option value="' + x.nomor + '"' + (x.nomor === s.nomor ? " selected" : "") + ">" + (idx + 1) + ". " + esc(x.namaLatin) + "</option>"; });
+    st.list.forEach(function (x) {
+      h += '<option value="' + x.nomor + '"' + (x.nomor === s.nomor ? " selected" : "") + ">" + posisiSurat(x.nomor) + ". " + esc(x.namaLatin) + "</option>";
+    });
     h += '</select><select id="qari">';
     ["01", "02", "03", "04", "05", "06"].forEach(function (q) { h += '<option value="' + q + '"' + (q === st.qari ? " selected" : "") + ">Qari " + (+q) + "</option>"; });
     h += "</select>";
@@ -142,10 +153,14 @@
     }
   });
 
-  msg("Memuat surat Juz Amma...");
+  msg("Memuat daftar surat...");
   get(BASE + "/surat").then(function (d) {
-    var byNum = {}; (d || []).forEach(function (x) { byNum[x.nomor] = x; });
-    st.list = PILIH.map(function (n) { return byNum[n]; }).filter(Boolean);
+    if (PILIH) {
+      var byNum = {}; (d || []).forEach(function (x) { byNum[x.nomor] = x; });
+      st.list = PILIH.map(function (n) { return byNum[n]; }).filter(Boolean);
+    } else {
+      st.list = (d || []).slice().sort(function (a, b) { return a.nomor - b.nomor; });
+    }
     if (!st.list.length) throw new Error("surat tidak ditemukan");
     loadSurat(st.list[0].nomor);
   }).catch(gagal);
