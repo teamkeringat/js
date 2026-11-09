@@ -1,13 +1,14 @@
-/* Shared JS Mesin Khutbah (Dengan Pembuka & Penutup Otomatis) */
+/* Shared JS Mesin Khutbah */
 (function () {
   var app = document.getElementById("app");
   if (!app) return;
 
-  // Daftar Kategori (Sudah ditambah Khutbah Jumat)
+  // Daftar Kategori (Lengkap dengan Khutbah Haji)
   var KATEGORI = [
     { label: "Khutbah Idul Fitri", key: "Khutbah Idul Fitri" },
     { label: "Khutbah Idul Adha", key: "Khutbah Idul Adha" },
     { label: "Khutbah Jumat", key: "Khutbah Jumat" },
+    { label: "Khutbah Haji", key: "Khutbah Haji" },
     { label: "Khutbah Nikah", key: "Khutbah Nikah" }
   ];
 
@@ -19,7 +20,7 @@
   var TR_SALAM_2 = "Segala puji bagi Allah yang telah memberi petunjuk kepada kami... Amma ba'du, wahai hamba-hamba Allah, bertakwalah kepada Allah dengan sebenar-benarnya takwa.\n\n";
 
   var DOA_PENUTUP = "\n\nاَللّٰهُمَّ اغْفِرْ لِلْمُسْلِمِيْنَ وَالْمُسْلِمَاتِ، وَالْمُؤْمِنِيْنَ وَالْمُؤْمِنَاتِ، اَلْأَحْيَاءِ مِنْهُمْ وَالْأَمْوَاتِ. رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ. وَالسَّلاَمُ عَلَيْكُمْ وَرَحْمَةُ اللهِ وَبَرَكَاتُهُ.";
-  var TR_DOA_PENUTUP = "\n\nYa Allah, ampunilah kaum muslimin dan muslimat, mukminin dan mukminat, baik yang masih hidup maupun yang telah wafat. Ya Tuhan kami, berilah kami kebaikan di dunia dan akhirat, serta lindungilah kami dari api neraka. Wassalamu'alaikum warahmatullahi wabarakatuh.";
+  var TR_DOA_PENUTUP = "\n\nYa Allah, ampunilah kaum muslimin dan muslimat... Wassalamu'alaikum warahmatullahi wabarakatuh.";
   // =======================================
 
   var st = { katIdx: 0, topikIdx: 0, cari: "", _focusCari: false, loading: false, jumpTo: null };
@@ -42,25 +43,13 @@
   function loadData() {
     st.loading = true;
     render(); 
-    
     var oldScript = document.getElementById("data-khutbah-script");
     if (oldScript) oldScript.remove();
-    
     var script = document.createElement("script");
     script.id = "data-khutbah-script";
     script.src = BASE_URL + "Khutbah.js?v=" + new Date().getTime(); 
-    
-    script.onload = function () {
-      st.loading = false;
-      render();
-    };
-    
-    script.onerror = function () {
-      st.loading = false;
-      render();
-      alert("Gagal memuat file: Data/Khutbah.js");
-    };
-    
+    script.onload = function () { st.loading = false; render(); };
+    script.onerror = function () { st.loading = false; render(); alert("Gagal memuat file: Data/Khutbah.js"); };
     document.body.appendChild(script);
   }
 
@@ -74,19 +63,16 @@
   function getSearchResults(q) {
     var babList = getActiveBab();
     if (!babList || !q) return [];
-    
-    var res = [];
-    q = q.toLowerCase();
-    
+    var res = [], lowerQ = q.toLowerCase();
     babList.forEach(function(b, bIdx) {
-      if (b.judul && b.judul.toLowerCase().indexOf(q) > -1) {
+      if (b.judul && b.judul.toLowerCase().indexOf(lowerQ) > -1) {
         res.push({ type: "judul", b: bIdx, text: b.judul, label: "📌 Judul: " + b.judul });
       }
       b.isi.forEach(function(item, iIdx) {
-        if (item.ar && item.ar.indexOf(q) > -1) {
+        if (item.ar && item.ar.indexOf(lowerQ) > -1) {
           res.push({ type: "isi", b: bIdx, i: iIdx, text: item.ar, label: "Arab: " + item.ar });
         }
-        if (item.tr && item.tr.toLowerCase().indexOf(q) > -1) {
+        if (item.tr && item.tr.toLowerCase().indexOf(lowerQ) > -1) {
           res.push({ type: "isi", b: bIdx, i: iIdx, text: item.tr, label: "Terjemah: " + item.tr });
         }
       });
@@ -119,7 +105,6 @@
     h += '</div></div>'; 
 
     h += '<div class="mid">';
-    
     if (st.loading) {
       h += '<div class="msg">Memuat data khutbah...</div>';
     } else if (!babList || babList.length === 0) {
@@ -134,42 +119,28 @@
           h += '<div class="msg">😕 Tidak ada teks yang cocok dengan "' + esc(st.cari) + '"</div>';
         } else {
           h += '<div class="hasil" style="background:rgba(0,0,0,.35); border:1px solid #c9b86a; border-radius:12px; padding:8px;">';
-          h += '<div class="hd2" style="font-size:.8rem; opacity:.75; padding:2px 8px 6px;">📋 ' + results.length + ' hasil ditemukan — klik untuk melompat:</div>';
-          
+          h += '<div class="hd2" style="font-size:.8rem; opacity:.75; padding:2px 8px 6px;">📋 ' + results.length + ' hasil ditemukan:</div>';
           results.forEach(function(r) {
             var cleanLabel = r.label.replace(/\n/g, ' ');
             if (cleanLabel.length > 80) cleanLabel = cleanLabel.substring(0, 80) + "...";
-            
             h += '<button class="it" data-pick="' + r.b + '" data-sub="' + (r.i !== undefined ? r.i : "") + '" style="display:block; width:100%; text-align:left; padding:8px 10px; border-radius:8px; border:0; background:transparent; color:inherit; cursor:pointer; font-size:.95rem; line-height:1.4; border-bottom:1px solid rgba(255,255,255,0.05); margin-bottom:4px;">';
-            h += hl(cleanLabel, q);
-            h += '</button>';
+            h += hl(cleanLabel, q) + '</button>';
           });
           h += '</div>';
         }
-      } 
-      else {
+      } else {
         if (!currentBab) {
           h += '<div class="msg">Silakan pilih judul khutbah.</div>';
         } else {
           h += '<div class="card" id="bab-0" style="margin-bottom:8px; background:rgba(201,184,106,0.1); border-color:#c9b86a;">';
-          h += '<div class="nm" style="color:#c9b86a;">' + esc(currentBab.judul) + '</div>';
-          h += '</div>';
+          h += '<div class="nm" style="color:#c9b86a;">' + esc(currentBab.judul) + '</div></div>';
 
           currentBab.isi.forEach(function(item, iIdx) {
             h += '<div class="card" id="ay-0-' + iIdx + '">';
-            
             var arText = item.ar;
             var trText = item.tr;
-            
-            // Penyisipan otomatis pembuka & penutup
-            if (iIdx === 0) { 
-              arText = SALAM_1 + arText;
-              trText = TR_SALAM_1 + trText;
-            } else if (iIdx === 1) { 
-              arText = SALAM_2 + arText + DOA_PENUTUP;
-              trText = TR_SALAM_2 + trText + TR_DOA_PENUTUP;
-            }
-
+            if (iIdx === 0) { arText = SALAM_1 + arText; trText = TR_SALAM_1 + trText; } 
+            else if (iIdx === 1) { arText = SALAM_2 + arText + DOA_PENUTUP; trText = TR_SALAM_2 + trText + TR_DOA_PENUTUP; }
             if (arText) h += '<div class="ar">' + esc(arText) + '</div>';
             if (trText) h += '<div class="tr" style="white-space:pre-wrap; margin-top:10px;">' + esc(trText) + '</div>';
             h += '</div>';
@@ -177,11 +148,7 @@
         }
       }
     }
-    
-    h += '</div>'; 
-    h += '<div class="bot"></div>'; 
-    h += '</div>'; 
-
+    h += '</div><div class="bot"></div></div>'; 
     app.innerHTML = h;
 
     if (st.jumpTo) {
@@ -190,14 +157,12 @@
       if (el) {
         setTimeout(function() {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          el.style.transition = "background 0.5s";
-          el.style.background = "rgba(201,184,106,0.6)"; 
+          el.style.transition = "background 0.5s"; el.style.background = "rgba(201,184,106,0.6)"; 
           setTimeout(function() { el.style.background = ""; }, 1500);
         }, 100);
       }
       st.jumpTo = null;
     }
-
     if (st._focusCari) {
       var inp = document.getElementById("cari");
       if (inp) { inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (x) {} }
@@ -205,41 +170,17 @@
     }
   }
 
-  app.addEventListener("input", function(e) {
-    if (e.target.id === "cari") {
-      st.cari = e.target.value;
-      st._focusCari = true;
-      render();
-    }
-  });
-
+  app.addEventListener("input", function(e) { if (e.target.id === "cari") { st.cari = e.target.value; st._focusCari = true; render(); } });
   app.addEventListener("change", function(e) {
-    if (e.target.id === "sel-kat") {
-      st.katIdx = +e.target.value;
-      st.topikIdx = 0; 
-      st.cari = ""; 
-      render();
-    }
-    if (e.target.id === "sel-topik") {
-      st.topikIdx = +e.target.value;
-      st.cari = "";
-      render();
-    }
+    if (e.target.id === "sel-kat") { st.katIdx = +e.target.value; st.topikIdx = 0; st.cari = ""; render(); }
+    if (e.target.id === "sel-topik") { st.topikIdx = +e.target.value; st.cari = ""; render(); }
   });
-
   app.addEventListener("click", function(e) {
     var btn = e.target.closest("[data-pick]");
     if (btn) {
-      var bIdx = +btn.getAttribute("data-pick");
-      var subIdx = btn.getAttribute("data-sub"); 
-      
-      if (st.topikIdx !== bIdx) {
-        st.topikIdx = bIdx;
-      }
-      
-      st.jumpTo = { b: bIdx, i: subIdx };
-      st.cari = ""; 
-      render();     
+      st.topikIdx = +btn.getAttribute("data-pick");
+      st.jumpTo = { b: st.topikIdx, i: btn.getAttribute("data-sub") };
+      st.cari = ""; render();     
     }
   });
 
