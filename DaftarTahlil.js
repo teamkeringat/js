@@ -2,8 +2,6 @@
 (function () {
   var app = document.getElementById("app");
   if (!app) return;
-
-  // Surat Yasin sudah dihapus. Langsung ke Tahlil Ringkas, dst.
   var MENU = [
     { label: "Tahlil Ringkas", file: "TahlilRingkas.js", key: "Tahlil Ringkas" },
     { label: "Tahlil Lengkap", file: "TahlilLengkap.js", key: "Tahlil Lengkap" },
