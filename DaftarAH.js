@@ -3,7 +3,8 @@
   var app = document.getElementById("app");
   if (!app) return;
 
-  var st = { data: null, cari: "", _focusCari: false, loading: false };
+  // Default: 0 (99 Asmaul Husna)
+  var st = { data: null, selectedBabIdx: 0, cari: "", _focusCari: false, loading: false, jumpTo: null };
   var BASE_URL = "https://teamkeringat.github.io/Data/"; 
 
   function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
@@ -27,7 +28,6 @@
     if (oldScript) oldScript.remove();
     var script = document.createElement("script");
     script.id = "data-asma-script";
-    // Tetap memanggil file data dari folder Data/
     script.src = BASE_URL + "AsmaulHusna.js?v=" + new Date().getTime(); 
     script.onload = function () { 
       st.loading = false; 
@@ -43,10 +43,23 @@
   function render() {
     var h = '<div class="w"><div class="top">';
     
-    h += '<div class="bar" style="margin-bottom:8px;">';
-    h += '<input id="cari" type="text" placeholder="Cari Asmaul Husna..." value="' + esc(st.cari) + '" style="width:100%;">';
-    h += '</div></div>'; 
+    // --- TOP BAR (KIRI: SELECT, KANAN: CARI) ---
+    if (st.data && st.data.bab) {
+      h += '<div class="bar">';
+      // Kiri: Dropdown Pilih Judul
+      h += '<select id="sel-bab" style="flex:1; width:50%; min-width:0;">';
+      st.data.bab.forEach(function(b, idx) {
+        h += '<option value="' + idx + '"' + (st.selectedBabIdx === idx ? " selected" : "") + '>' + esc(b.judul) + '</option>';
+      });
+      h += '</select>';
+      
+      // Kanan: Kotak Cari
+      h += '<input id="cari" type="text" placeholder="Cari..." value="' + esc(st.cari) + '" style="flex:1; width:50%; min-width:0;">';
+      h += '</div>';
+    }
+    h += '</div>'; 
 
+    // --- KONTEN TENGAH ---
     h += '<div class="mid">';
     
     if (st.loading) {
@@ -56,57 +69,88 @@
     } else {
       var q = st.cari.toLowerCase().trim();
 
+      // 1. MODE PENCARIAN (Semua Bab Dicari)
       if (q) {
         var hasil = [];
-        st.data.bab.forEach(function(bab) {
-          bab.isi.forEach(function(item) {
+        st.data.bab.forEach(function(bab, bIdx) {
+          bab.isi.forEach(function(item, iIdx) {
             var pool = [(item.ar||""), (item.tr||""), (item.arti||"")].join(" ").toLowerCase();
-            if (pool.indexOf(q) > -1) hasil.push(item);
+            if (pool.indexOf(q) > -1) {
+              hasil.push({ bab: bab, bIdx: bIdx, item: item, iIdx: iIdx });
+            }
           });
         });
         
         if (hasil.length === 0) {
-          h += '<div class="msg">😕 Tidak ada Asma yang cocok dengan "' + esc(st.cari) + '"</div>';
+          h += '<div class="msg">😕 Tidak ada teks yang cocok dengan "' + esc(st.cari) + '"</div>';
         } else {
-          h += '<div class="card" style="margin-bottom:8px; background:rgba(201,184,106,0.1); border-color:#c9b86a;">';
-          h += '<div class="nm" style="color:#c9b86a;">Hasil Pencarian (' + hasil.length + ')</div></div>';
+          h += '<div class="hasil" style="background:rgba(0,0,0,.35); border:1px solid #c9b86a; border-radius:12px; padding:8px;">';
+          h += '<div class="hd2" style="font-size:.8rem; opacity:.75; padding:2px 8px 6px;">📋 ' + hasil.length + ' hasil ditemukan — klik untuk membuka:</div>';
           
-          hasil.forEach(function(item) {
-            h += '<div class="card">';
-            if(item.no) h += '<div class="nm" style="font-size:1rem; margin-bottom:5px;">' + item.no + '. ' + hl(item.tr, st.cari) + '</div>';
-            else h += '<div class="nm" style="font-size:1rem; margin-bottom:5px;">' + hl(item.tr, st.cari) + '</div>';
-            h += '<div class="ar" style="margin:5px 0;">' + esc(item.ar) + '</div>';
-            h += '<div class="tr" style="font-weight:bold; color:#c9b86a;">' + hl(item.arti, st.cari) + '</div>';
-            h += '</div>';
-          });
-        }
-      } else {
-        st.data.bab.forEach(function(bab) {
-          h += '<div class="card" style="background:rgba(201,184,106,0.1); border-color:#c9b86a; margin-bottom:10px; margin-top:10px;">';
-          h += '<div class="nm" style="color:#c9b86a;">' + esc(bab.judul) + '</div></div>';
-
-          bab.isi.forEach(function(item) {
-            h += '<div class="card" style="display:flex; flex-direction:column; gap:5px; padding:10px;">';
+          hasil.forEach(function(r) {
+            var label = (r.item.no ? r.item.no + ". " : "") + (r.item.tr || r.item.arti || "Teks");
+            var cleanLabel = label.replace(/\n/g, ' ');
+            if (cleanLabel.length > 80) cleanLabel = cleanLabel.substring(0, 80) + "...";
             
-            if (bab.judul === "99 Asmaul Husna") {
+            h += '<button class="it" data-bab="' + r.bIdx + '" data-item="' + r.iIdx + '" style="display:block; width:100%; text-align:left; padding:8px 10px; border-radius:8px; border:0; background:transparent; color:inherit; cursor:pointer; font-size:.95rem; line-height:1.4; border-bottom:1px solid rgba(255,255,255,0.05); margin-bottom:4px;">';
+            h += '<span style="font-size:.75rem; color:#c9b86a; display:block; margin-bottom:2px;">' + esc(r.bab.judul) + '</span>';
+            h += hl(cleanLabel, q);
+            h += '</button>';
+          });
+          h += '</div>';
+        }
+      } 
+      // 2. MODE NORMAL (Tampilkan Bab yang Dipilih)
+      else {
+        var currentBab = st.data.bab[st.selectedBabIdx];
+
+        if (!currentBab) {
+          h += '<div class="msg">Silakan pilih judul di atas.</div>';
+        } else {
+          // Judul Bab
+          h += '<div class="card" id="bab-head" style="margin-bottom:8px; background:rgba(201,184,106,0.1); border-color:#c9b86a;">';
+          h += '<div class="nm" style="color:#c9b86a;">' + esc(currentBab.judul) + '</div></div>';
+
+          // Isi Bab
+          currentBab.isi.forEach(function(item, iIdx) {
+            h += '<div class="card" id="item-' + iIdx + '" style="display:flex; flex-direction:column; gap:5px; padding:10px;">';
+            
+            // Khusus Tampilan 99 Asmaul Husna
+            if (currentBab.judul === "99 Asmaul Husna") {
               h += '<div style="display:flex; justify-content:space-between; align-items:center;">';
               h += '<div class="nm" style="font-size:1rem;">' + item.no + '. ' + esc(item.tr) + '</div>';
               h += '<div style="font-weight:bold; color:#c9b86a; font-size:.9rem;">' + esc(item.arti) + '</div>';
               h += '</div>';
               h += '<div class="ar" style="margin:0; font-size:calc(24px * var(--z,1));">' + esc(item.ar) + '</div>';
-            } else {
+            } 
+            // Tampilan Umum (Dalil, Qoshidah, Doa)
+            else {
               h += '<div class="ar" style="margin:5px 0;">' + esc(item.ar) + '</div>';
               h += '<div class="lt" style="font-style:italic; margin-bottom:5px;">' + esc(item.tr) + '</div>';
               h += '<div class="tr" style="font-weight:bold;">' + esc(item.arti) + '</div>';
             }
             h += '</div>';
           });
-        });
+        }
       }
     }
     
     h += '</div><div class="bot"></div></div>'; 
     app.innerHTML = h;
+
+    // --- LOGIKA LOMPAT KE TEKS YANG DIKLIK ---
+    if (st.jumpTo) {
+      var el = document.getElementById('item-' + st.jumpTo.i);
+      if (el) {
+        setTimeout(function() {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.style.transition = "background 0.5s";
+          el.style.background = "rgba(201,184,106,0.6)"; 
+          setTimeout(function() { el.style.background = ""; }, 1500);
+        }, 100);
+      }
+      st.jumpTo = null;
+    }
 
     if (st._focusCari) {
       var inp = document.getElementById("cari");
@@ -115,11 +159,33 @@
     }
   }
 
+  // --- EVENT LISTENERS ---
   app.addEventListener("input", function(e) {
     if (e.target.id === "cari") {
       st.cari = e.target.value;
       st._focusCari = true;
       render();
+    }
+  });
+
+  app.addEventListener("change", function(e) {
+    if (e.target.id === "sel-bab") {
+      st.selectedBabIdx = +e.target.value;
+      st.cari = ""; // Reset pencarian saat ganti judul
+      render();
+    }
+  });
+
+  app.addEventListener("click", function(e) {
+    var btn = e.target.closest("[data-bab]");
+    if (btn) {
+      var bIdx = +btn.getAttribute("data-bab");
+      var iIdx = btn.getAttribute("data-item");
+      
+      st.selectedBabIdx = bIdx; // Pindah ke judul yang sesuai
+      st.jumpTo = { i: iIdx };  // Tandai item yang mau disorot
+      st.cari = "";             // Tutup kotak pencarian
+      render();                 // Render ulang (setelah render, sistem akan scroll ke item)
     }
   });
 
