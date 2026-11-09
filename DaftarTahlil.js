@@ -1,79 +1,58 @@
-/* Shared JS Mesin Tahlilan - Memanggil data dari folder /Data/ */
+/* Shared JS Mesin Tahlilan */
 (function () {
   var app = document.getElementById("app");
   if (!app) return;
 
-  // Daftar pilihan Tahlil beserta nama filenya
+  // Daftar menu sesuai urutan permintaan Boss
   var MENU = [
-    { label: "Tahlil Ringkas", file: "TahlilRingka.js" },
-    { label: "Tahlil Lengkap", file: "TahlilLengkap.js" },
-    { label: "Tahlil Majlis", file: "TahlilMajlis.js" },
-    { label: "Doa Tahlil 1", file: "DoaTahlil1.js" },
-    { label: "Doa Tahlil 2", file: "DoaTahlil2.js" },
-    { label: "Doa Tahlil 3", file: "DoaTahlil3.js" },
-    { label: "Doa Tahlil 4", file: "DoaTahlil4.js" },
-    { label: "Doa Tahlil 5", file: "DoaTahlil5.js" },
-    { label: "Doa Al-Fatihah 1", file: "DoaFatihahl1.js" },
-    { label: "Doa Al-Fatihah 2", file: "DoaFatihahl2.js" },
-    { label: "Doa Al-Fatihah 3", file: "DoaFatihahl3.js" }
+    { label: "Tahlil Ringkas", file: "TahlilRingkas.js", key: "Tahlil Ringkas" },
+    { label: "Tahlil Lengkap", file: "TahlilLengkap.js", key: "Tahlil Lengkap" },
+    { label: "Tahlil Majlis", file: "TahlilMajlis.js", key: "Tahlil Majlis" },
+    { label: "Doa Tahlil 1", file: "DoaTahlil1.js", key: "Doa Tahlil 1" },
+    { label: "Doa Tahlil 2", file: "DoaTahlil2.js", key: "Doa Tahlil 2" },
+    { label: "Doa Tahlil 3", file: "DoaTahlil3.js", key: "Doa Tahlil 3" },
+    { label: "Doa Tahlil 4", file: "DoaTahlil4.js", key: "Doa Tahlil 4" },
+    { label: "Doa Tahlil 5", file: "DoaTahlil5.js", key: "Doa Tahlil 5" },
+    { label: "Doa Al-Fatihah 1", file: "DoaFatihahl1.js", key: "Doa Al-Fatihah 1" },
+    { label: "Doa Al-Fatihah 2", file: "DoaFatihahl2.js", key: "Doa Al-Fatihah 2" },
+    { label: "Doa Al-Fatihah 3", file: "DoaFatihahl3.js", key: "Doa Al-Fatihah 3" }
   ];
 
-  var st = { data: [], cari: "", _focusCari: false, selectedIdx: -1, loading: false };
-  var BASE_URL = "https://teamkeringat.github.io/Data/";
+  var st = { data: null, cari: "", _focusCari: false, selectedIdx: -1, loading: false };
+  var BASE_URL = "https://teamkeringat.github.io/Data/"; 
 
   function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   
-  // Fungsi untuk memuat file JS dari folder Data
-  function loadFile(fileName, callback) {
+  function loadFile(fileName, keyName, callback) {
     st.loading = true;
-    render(); // Tampilkan loading
+    render(); 
     
-    // Hapus script lama jika ada (biar tidak bentrok)
     var oldScript = document.getElementById("data-tahlil-script");
     if (oldScript) oldScript.remove();
     
-    // Buat script baru
     var script = document.createElement("script");
     script.id = "data-tahlil-script";
-    // Tambahkan timestamp (?v=...) agar browser tidak menyimpan cache lama
     script.src = BASE_URL + fileName + "?v=" + new Date().getTime(); 
     
     script.onload = function () {
       st.loading = false;
-      // Asumsi file di folder Data mendefinisikan variabel window.TAHLIL_DATA
-      st.data = window.TAHLIL_DATA || [];
+      if (window.KITAB && window.KITAB[keyName]) {
+        st.data = window.KITAB[keyName];
+      } else {
+        st.data = null;
+      }
       if (callback) callback();
       render();
     };
     
     script.onerror = function () {
       st.loading = false;
-      st.data = [];
+      st.data = null;
       render();
       alert("Gagal memuat file: " + fileName + "\nPastikan file sudah di-upload ke folder Data/ di GitHub.");
     };
     
     document.body.appendChild(script);
-  }
-
-  function renderCard(item) {
-    var h = '<div class="card">';
-    
-    if (item.judul) h += '<div class="nm">' + esc(item.judul) + '</div>';
-    if (item.sub) h += '<div class="sub">' + esc(item.sub) + '</div>';
-    
-    var ar = item.arab || "";
-    var tr = item.latin || "";
-    var arti = item.arti || "";
-    var ref = item.hadits || item.referensi || "";
-    
-    if (ar) h += '<div class="ar">' + esc(ar) + '</div>';
-    if (tr) h += '<div class="lt">' + esc(tr) + '</div>';
-    if (arti) h += '<div class="tr">' + esc(arti) + '</div>';
-    if (ref) h += '<div class="tf on" style="background:transparent; padding:0; margin-top:10px; color:#c9bd8a; font-size: calc(.9rem * var(--z,1));">📚 ' + esc(ref) + '</div>';
-    
-    h += '</div>';
-    return h;
   }
 
   function render() {
@@ -102,28 +81,50 @@
       h += '<div class="msg">Memuat data...</div>';
     } else if (st.selectedIdx === -1) {
       h += '<div class="msg" style="opacity:.6; background:transparent; border:none; margin-top:30px;">Silakan pilih salah satu Tahlil pada menu di atas.</div>';
-    } else if (st.data.length === 0) {
+    } else if (!st.data || !st.data.bab) {
       h += '<div class="msg">Data kosong atau file belum di-upload.</div>';
     } else {
-      // Filter pencarian
       var q = st.cari.toLowerCase().trim();
-      var filtered = st.data.filter(function(item) {
-        if (!q) return true;
-        var pool = [(item.judul||""), (item.latin||""), (item.arti||""), (item.arab||"")].join(" ").toLowerCase();
-        return pool.indexOf(q) > -1;
+      var adaHasil = false;
+
+      st.data.bab.forEach(function(b) {
+        var matchItems = [];
+        
+        b.isi.forEach(function(item) {
+          var itemMatches = !q || 
+                            (item.ar && item.ar.indexOf(q) > -1) || 
+                            (item.tr && item.tr.toLowerCase().indexOf(q) > -1);
+          
+          if (itemMatches) {
+            matchItems.push(item);
+          }
+        });
+
+        if (matchItems.length > 0) {
+          adaHasil = true;
+          
+          // Judul Bab (Hanya Teks Indonesia, Tanpa Arab)
+          h += '<div class="card" style="margin-bottom:8px; background:rgba(201,184,106,0.1); border-color:#c9b86a;">';
+          h += '<div class="nm" style="color:#c9b86a;">' + esc(b.judul) + '</div>';
+          h += '</div>';
+
+          // Item Teks
+          matchItems.forEach(function(item) {
+            h += '<div class="card">';
+            if (item.ar) h += '<div class="ar">' + esc(item.ar) + '</div>';
+            if (item.tr) h += '<div class="tr" style="white-space:pre-wrap; margin-top:10px;">' + esc(item.tr) + '</div>';
+            h += '</div>';
+          });
+        }
       });
 
-      if (filtered.length === 0) {
-        h += '<div class="msg">😕 Tidak ada teks yang cocok.</div>';
-      } else {
-        filtered.forEach(function(item) {
-          h += renderCard(item);
-        });
+      if (q && !adaHasil) {
+        h += '<div class="msg">😕 Tidak ada teks yang cocok dengan pencarian.</div>';
       }
     }
     
     h += '</div>'; // tutup mid
-    h += '<div class="bot"></div>'; // bot kosong
+    h += '<div class="bot"></div>'; 
     h += '</div>'; // tutup w
 
     app.innerHTML = h;
@@ -150,15 +151,15 @@
       st.cari = "";
       if (val === "") {
         st.selectedIdx = -1;
-        st.data = [];
+        st.data = null;
         render();
       } else {
         st.selectedIdx = +val;
-        loadFile(MENU[st.selectedIdx].file);
+        loadFile(MENU[st.selectedIdx].file, MENU[st.selectedIdx].key);
       }
     }
   });
 
-  // Render awal (kosong)
+  // Render awal
   render();
 })();
