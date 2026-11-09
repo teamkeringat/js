@@ -3,9 +3,8 @@
   var app = document.getElementById("app");
   if (!app) return;
 
-  // Menambahkan st.selectedDoa untuk menyimpan status pilihan dropdown
-  var st = { list: [], filtered: [], page: 0, cari: "", _focusCari: false, selectedDoa: "" };
-  var PER = 10;
+  // Mode: "empty" (awal), "all" (semua), "single" (satu doa)
+  var st = { list: [], cari: "", _focusCari: false, viewMode: "empty", selectedIdx: -1, searchResults: [] };
 
   function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function hl(text, q) {
@@ -17,6 +16,7 @@
   function msg(t) { app.innerHTML = '<div class="w"><div class="msg">' + t + "</div></div>"; }
   function gagal(e) { msg("Gagal memuat data (" + esc(e && e.message) + ").<br>Periksa koneksi internet, atau buka langsung di <a href='https://equran.id' target='_blank' rel='noopener'>equran.id</a>."); }
 
+  // 1. Ambil Data
   function loadData() {
     msg("Memuat daftar doa...");
     fetch("https://equran.id/api/doa")
@@ -24,99 +24,96 @@
       .then(function (j) {
         st.list = j.data || j;
         if (!Array.isArray(st.list)) throw new Error("Format data tidak dikenal");
-        st.filtered = st.list;
         render();
       }).catch(gagal);
   }
 
-  function applySearch() {
-    var q = st.cari.toLowerCase().trim();
-    if (!q) {
-      st.filtered = st.list;
-    } else {
-      st.filtered = st.list.filter(function (d) {
-        var pool = [(d.nama || d.judul || ""), (d.grup || ""), (d.arti || d.idn || "")].join(" ").toLowerCase();
-        return pool.indexOf(q) > -1;
-      });
-    }
+  // 2. Kartu Tampilan Doa
+  function renderCard(d) {
+    var h = '<div class="card">';
+    h += '<div class="nm">' + esc(d.nama || d.judul) + '</div>';
+    if (d.grup) h += '<div class="sub">' + esc(d.grup) + '</div>';
+    
+    var ar = d.ar || d.arab || "";
+    var tr = d.tr || d.latin || "";
+    var arti = d.arti || d.idn || "";
+    var ref = d.tentang || d.referensi || "";
+    
+    if (ar) h += '<div class="ar">' + esc(ar) + '</div>';
+    if (tr) h += '<div class="lt">' + esc(tr) + '</div>';
+    if (arti) h += '<div class="tr">' + esc(arti) + '</div>';
+    if (ref) h += '<div class="sub" style="margin-top:10px; opacity:.7">📚 ' + esc(ref) + '</div>';
+    
+    h += '</div>';
+    return h;
   }
 
+  // 3. Render Tampilan Utama
   function render() {
-    applySearch();
-    
-    var total = st.filtered.length;
-    var totPage = Math.ceil(total / PER) || 1;
-    var a0 = st.page * PER;
-    var a1 = Math.min(a0 + PER, total);
-    var searching = st.cari && st.cari.trim();
-
     var h = '<div class="w"><div class="top">';
     
-    // --- TOP BAR (1 Baris, 2 Kolom Sejajar) ---
+    // --- TOP BAR ---
     h += '<div class="bar">';
     
-    // 1. Kiri: Dropdown Pilihan Doa
+    // Dropdown Kiri
     h += '<select id="sel" style="flex:1; width:50%; min-width:0;">';
+    h += '<option value="empty"' + (st.viewMode === "empty" ? " selected" : "") + '>Pilih Doa</option>';
+    h += '<option value="all"' + (st.viewMode === "all" ? " selected" : "") + '>Pilih Semua (Scroll)</option>';
     
-    // Kondisi: Jika st.selectedDoa kosong, maka "Pilih Doa" yang terpilih
-    h += '<option value=""' + (st.selectedDoa === "" ? " selected" : "") + '>Pilih Doa</option>';
-    
-    if (searching && total > 0) {
-      st.filtered.forEach(function(d) {
-        var realIdx = st.list.indexOf(d);
-        var isSel = (String(st.selectedDoa) === String(realIdx)) ? " selected" : "";
-        h += '<option value="' + realIdx + '"' + isSel + '>' + esc(d.nama || d.judul) + '</option>';
-      });
-    } else {
-      st.list.forEach(function(d, idx) {
-        var isSel = (String(st.selectedDoa) === String(idx)) ? " selected" : "";
-        h += '<option value="' + idx + '"' + isSel + '>' + (idx+1) + '. ' + esc(d.nama || d.judul) + '</option>';
-      });
-    }
+    st.list.forEach(function(d, idx) {
+      var isSel = (st.viewMode === "single" && st.selectedIdx === idx) ? " selected" : "";
+      h += '<option value="' + idx + '"' + isSel + '>' + (idx+1) + '. ' + esc(d.nama || d.judul) + '</option>';
+    });
     h += '</select>';
     
-    // 2. Kanan: Kotak Cari Doa
-    h += '<input id="cari" type="text" placeholder="Cari Doa" value="' + esc(st.cari) + '" style="flex:1; width:50%; min-width:0;">';
+    // Kotak Cari Kanan
+    h += '<input id="cari" type="text" placeholder="Cari Doa..." value="' + esc(st.cari) + '" style="flex:1; width:50%; min-width:0;">';
     
-    h += '</div>'; // tutup bar
-    h += '</div>'; // tutup top
+    h += '</div></div>'; // tutup top
 
-    // --- MIDDLE (Area Scroll) ---
+    // --- MIDDLE (Area Konten) ---
     h += '<div class="mid">';
-    if (total === 0) {
-      h += '<div class="msg">😕 Tidak ada doa yang cocok</div>';
-    } else {
-      for (var i = a0; i < a1; i++) {
-        var d = st.filtered[i];
-        h += '<div class="card">';
-        h += '<div class="nm">' + hl(d.nama || d.judul, st.cari) + '</div>';
-        if (d.grup) h += '<div class="sub">' + esc(d.grup) + '</div>';
-        
-        var ar = d.ar || d.arab || "";
-        var tr = d.tr || d.latin || "";
-        var arti = d.arti || d.idn || "";
-        var ref = d.tentang || d.referensi || "";
-        
-        if (ar) h += '<div class="ar">' + esc(ar) + '</div>';
-        if (tr) h += '<div class="lt">' + esc(tr) + '</div>';
-        if (arti) h += '<div class="tr">' + esc(arti) + '</div>';
-        if (ref) h += '<div class="sub" style="margin-top:10px; opacity:.7">📚 ' + esc(ref) + '</div>';
-        
-        h += '</div>'; // tutup card
+    
+    if (st.cari && st.cari.trim()) {
+      // TAMPILAN PENCARIAN
+      var q = st.cari.toLowerCase().trim();
+      st.searchResults = st.list.map(function(d, idx) { return {d:d, idx:idx}; }).filter(function(x) {
+        var pool = [(x.d.nama || x.d.judul || ""), (x.d.grup || ""), (x.d.arti || x.d.idn || "")].join(" ").toLowerCase();
+        return pool.indexOf(q) > -1;
+      });
+      
+      if (!st.searchResults.length) {
+        h += '<div class="msg">😕 Tidak ada doa yang cocok</div>';
+      } else {
+        h += '<div class="hasil">';
+        h += '<div class="hd2">📋 ' + st.searchResults.length + ' doa cocok — klik untuk membuka:</div>';
+        st.searchResults.forEach(function(x) {
+          h += '<button class="it" data-pick="' + x.idx + '"><span class="num">' + (x.idx+1) + '.</span>' + hl(x.d.nama || x.d.judul, st.cari) + ' <span class="st">— ' + hl(x.d.arti || x.d.idn || "", st.cari) + '</span></button>';
+        });
+        h += '</div>';
       }
+    } else if (st.viewMode === "empty") {
+      // TAMPILAN AWAL KOSONG
+      h += '<div class="msg" style="opacity:.6; background:transparent; border:none; margin-top:30px;">Silakan pilih doa pada menu di atas,<br>atau pilih "Pilih Semua (Scroll)" untuk melihat seluruh doa.</div>';
+    } else if (st.viewMode === "all") {
+      // TAMPILAN SEMUA DOA (Scroll ke bawah)
+      for (var i = 0; i < st.list.length; i++) {
+        h += renderCard(st.list[i]);
+      }
+    } else if (st.viewMode === "single" && st.selectedIdx >= 0) {
+      // TAMPILAN SATU DOA SAJA
+      h += renderCard(st.list[st.selectedIdx]);
     }
+    
     h += '</div>'; // tutup mid
 
     // --- BOTTOM BAR ---
-    h += '<div class="bot">';
-    if (total > 0) {
-      h += '<div class="pg"><button id="prev"' + (st.page === 0 ? " disabled" : "") + ">⬅ Sebelumnya</button><span>Doa " + (a0 + 1) + "-" + a1 + " dari " + total + '</span><button id="next"' + (st.page >= totPage - 1 ? " disabled" : "") + ">Berikutnya ➡</button></div>";
-    }
-    h += '</div>';
+    h += '<div class="bot"></div>'; // Sengaja dikosongkan karena scroll sudah ditangani .mid
 
     h += '</div>'; // tutup w
     app.innerHTML = h;
 
+    // Fokus kembali ke kotak pencarian
     if (st._focusCari) {
       var inp = document.getElementById("cari");
       if (inp) { inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (x) {} }
@@ -124,11 +121,10 @@
     }
   }
 
+  // 4. Event Handler
   app.addEventListener("input", function (e) {
     if (e.target.id === "cari") {
       st.cari = e.target.value;
-      st.page = 0;
-      st.selectedDoa = ""; // Reset dropdown ke "Pilih Doa" saat mencari
       st._focusCari = true;
       render();
     }
@@ -137,30 +133,44 @@
   app.addEventListener("change", function (e) {
     if (e.target.id === "sel") {
       var val = e.target.value;
-      st.selectedDoa = val; // Simpan status pilihan
+      st.cari = ""; // Reset pencarian jika dropdown diubah
       
-      if (val === "") return; 
-      
-      var idx = +val;
-      if (idx >= 0 && idx < st.list.length) {
-         st.page = Math.floor(idx / PER); 
-         st.cari = ""; 
-         render();
+      if (val === "empty") {
+        st.viewMode = "empty";
+        st.selectedIdx = -1;
+      } else if (val === "all") {
+        st.viewMode = "all";
+        st.selectedIdx = -1;
+      } else {
+        st.viewMode = "single";
+        st.selectedIdx = +val;
       }
+      render();
+      
+      // Scroll ke paling atas
+      var mid = app.querySelector(".mid");
+      if (mid) mid.scrollTop = 0;
     }
   });
 
   app.addEventListener("click", function (e) {
     var t = e.target;
-    if (t.id === "prev" || t.id === "next") {
-      st.page += t.id === "next" ? 1 : -1;
-      st.selectedDoa = ""; // Reset dropdown kembali ke "Pilih Doa" saat pindah halaman
+    
+    // Aksi saat mengklik hasil pencarian
+    var pick = t.closest && t.closest("[data-pick]");
+    if (pick) {
+      var idx = +pick.getAttribute("data-pick");
+      st.viewMode = "single"; // Pindah ke mode tampil 1 doa
+      st.selectedIdx = idx;
+      st.cari = ""; // Tutup kotak pencarian
       render();
+      
       var mid = app.querySelector(".mid");
       if (mid) mid.scrollTop = 0;
       return;
     }
   });
 
+  // Jalankan
   loadData();
 })();
