@@ -4,7 +4,6 @@
   if (!app) return;
 
   var MENU = [
-    { label: "Surat Yasin", type: "api", id: 36 },
     { label: "Tahlil Ringkas", type: "js", file: "TahlilRingkas.js", key: "Tahlil Ringkas" },
     { label: "Tahlil Lengkap", type: "js", file: "TahlilLengkap.js", key: "Tahlil Lengkap" },
     { label: "Tahlil Majlis", type: "js", file: "TahlilMajlis.js", key: "Tahlil Majlis" },
@@ -15,7 +14,8 @@
     { label: "Doa Tahlil 5", type: "js", file: "DoaTahlil5.js", key: "Doa Tahlil 5" },
     { label: "Doa Al-Fatihah 1", type: "js", file: "DoaFatihah1.js", key: "Doa Al-Fatihah 1" },
     { label: "Doa Al-Fatihah 2", type: "js", file: "DoaFatihah2.js", key: "Doa Al-Fatihah 2" },
-    { label: "Doa Al-Fatihah 3", type: "js", file: "DoaFatihah3.js", key: "Doa Al-Fatihah 3" }
+    { label: "Doa Al-Fatihah 3", type: "js", file: "DoaFatihah3.js", key: "Doa Al-Fatihah 3" },
+    { label: "Surat Yasin", type: "api", id: 36 },
   ];
 
   var st = { data: null, cari: "", _focusCari: false, selectedIdx: -1, loading: false };
@@ -77,7 +77,7 @@
     var h = '<div class="w"><div class="top">';
     h += '<div class="bar">';
     h += '<select id="sel" style="flex:1; width:50%; min-width:0;">';
-    h += '<option value=""' + (st.selectedIdx === -1 ? " selected" : "") + '>Pilih Yasin/Tahlil...</option>';
+    h += '<option value=""' + (st.selectedIdx === -1 ? " selected" : "") + '>Pilih...</option>';
     MENU.forEach(function(m, idx) {
       h += '<option value="' + idx + '"' + (st.selectedIdx === idx ? " selected" : "") + '>' + (idx+1) + '. ' + esc(m.label) + '</option>';
     });
