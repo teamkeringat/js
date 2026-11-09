@@ -21,7 +21,6 @@
 
   var DOA_PENUTUP = "\n\nاَللّٰهُمَّ اغْفِرْ لِلْمُسْلِمِيْنَ وَالْمُسْلِمَاتِ، وَالْمُؤْمِنِيْنَ وَالْمُؤْمِنَاتِ، اَلْأَحْيَاءِ مِنْهُمْ وَالْأَمْوَاتِ. رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ. وَالسَّلاَمُ عَلَيْكُمْ وَرَحْمَةُ اللهِ وَبَرَكَاتُهُ.";
   var TR_DOA_PENUTUP = "\n\nYa Allah, ampunilah kaum muslimin dan muslimat... Wassalamu'alaikum warahmatullahi wabarakatuh.";
-  // =======================================
 
   var st = { katIdx: 0, topikIdx: 0, cari: "", _focusCari: false, loading: false, jumpTo: null };
   var BASE_URL = "https://teamkeringat.github.io/Data/"; 
@@ -132,15 +131,31 @@
         if (!currentBab) {
           h += '<div class="msg">Silakan pilih judul khutbah.</div>';
         } else {
+          // Judul Topik Utama
           h += '<div class="card" id="bab-0" style="margin-bottom:8px; background:rgba(201,184,106,0.1); border-color:#c9b86a;">';
           h += '<div class="nm" style="color:#c9b86a;">' + esc(currentBab.judul) + '</div></div>';
 
           currentBab.isi.forEach(function(item, iIdx) {
-            h += '<div class="card" id="ay-0-' + iIdx + '">';
+            h += '<div class="card" id="ay-0-' + iIdx + '" style="margin-bottom:15px;">';
+            
+            // === LABEL KHUTBAH 1 / 2 (TIDAK HILANG SAAT ARAB SAJA) ===
+            var labelTeks = (iIdx === 0) ? "Khutbah 1" : "Khutbah 2";
+            h += '<div style="font-weight:bold; font-size:1.15rem; color:#c9b86a; border-bottom:1px solid rgba(201,184,106,0.3); padding-bottom:6px; margin-bottom:12px;">' + labelTeks + '</div>';
+            
             var arText = item.ar;
             var trText = item.tr;
-            if (iIdx === 0) { arText = SALAM_1 + arText; trText = TR_SALAM_1 + trText; } 
-            else if (iIdx === 1) { arText = SALAM_2 + arText + DOA_PENUTUP; trText = TR_SALAM_2 + trText + TR_DOA_PENUTUP; }
+
+            // Membersihkan teks "Khutbah 1:" atau "Khutbah 2:" bawaan dari file data agar tidak dobel
+            trText = trText.replace(/^Khutbah 1:\s*/i, '').replace(/^Khutbah 2:\s*/i, '');
+            
+            if (iIdx === 0) { 
+              arText = SALAM_1 + arText; 
+              trText = TR_SALAM_1 + trText; 
+            } else if (iIdx === 1) { 
+              arText = SALAM_2 + arText + DOA_PENUTUP; 
+              trText = TR_SALAM_2 + trText + TR_DOA_PENUTUP; 
+            }
+
             if (arText) h += '<div class="ar">' + esc(arText) + '</div>';
             if (trText) h += '<div class="tr" style="white-space:pre-wrap; margin-top:10px;">' + esc(trText) + '</div>';
             h += '</div>';
