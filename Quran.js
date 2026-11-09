@@ -4,12 +4,11 @@
   var app = document.getElementById("app");
   if (!app) return;
 
-  // Membaca konfigurasi mode dari HTML
   var cfg = window.QURAN_CONFIG || { mode: 'full' };
   var PILIH = null;
   
   if (cfg.mode === 'pilihan') {
-    PILIH = [36, 55, 67, 56, 18]; // Yasin, Ar-Rahman, Al-Mulk, Al-Waqiah, Al-Kahfi
+    PILIH = [36, 55, 67, 56, 18];
   } else if (cfg.mode === 'juzamma') {
     PILIH = [1, 114, 113, 112, 111, 110, 109, 108, 107, 106, 105, 104, 103, 102, 101, 100, 99, 98, 97, 96, 95, 94, 93, 92, 91, 90, 89, 88, 87, 86, 85, 84, 83, 82, 81, 80, 79, 78];
   }
@@ -96,7 +95,8 @@
     } else {
       for (var i = a0; i < a1; i++) {
         var a = s.ayat[i];
-        h2 += '<div class="ay" data-i="' + i + '"><span class="no">' + (a.nomorAyat || i + 1) + '</span><div class="ar">' + esc(a.teksArab) + "</div>" + (a.teksLatin ? '<div class="lt">' + esc(a.teksLatin) + "</div>" : "") + '<div class="tr">' + esc(a.teksIndonesia) + "</div>" + '<div class="ab"><button data-act="play">▶ Putar</button><button data-act="tafsir">📖 Tafsir</button></div><div class="tf"></div></div>';
+        // Menambahkan nama surat di dalam kotak emas penanda ayat
+        h2 += '<div class="ay" data-i="' + i + '"><span class="no">' + esc(s.namaLatin) + ': ' + (a.nomorAyat || i + 1) + '</span><div class="ar">' + esc(a.teksArab) + "</div>" + (a.teksLatin ? '<div class="lt">' + esc(a.teksLatin) + "</div>" : "") + '<div class="tr">' + esc(a.teksIndonesia) + "</div>" + '<div class="ab"><button data-act="play">▶ Putar</button><button data-act="tafsir">📖 Tafsir</button></div><div class="tf"></div></div>';
       }
     }
     return h2;
@@ -116,7 +116,14 @@
     h += "</select>";
     if (!searching) h += '<button id="whole" class="' + (st.whole ? "on" : "") + '" title="' + (st.whole ? "Tampil Per Ayat" : "Tampil Per Surat") + '">' + (st.whole ? "📖" : "📄") + "</button>";
     h += '</div></div><div class="mid">' + midHtml(s) + '</div><div class="bot">';
-    if (!st.whole && !searching) { h += '<div class="pg"><button id="prev"' + (st.page === 0 ? " disabled" : "") + ">⬅ Sebelumnya</button><span>Hal. " + (st.page + 1) + " / " + tot + '</span><button id="next"' + (st.page >= tot - 1 ? " disabled" : "") + ">Berikutnya ➡</button></div>"; }
+    
+    // Navigasi halaman menampilkan nama surat & rentang ayat
+    if (!st.whole && !searching) {
+      var a0 = st.page * PER;
+      var a1 = Math.min(a0 + PER, s.ayat.length);
+      h += '<div class="pg"><button id="prev"' + (st.page === 0 ? " disabled" : "") + ">⬅ Sebelumnya</button><span>" + esc(s.namaLatin) + " • Ayat " + (a0 + 1) + "-" + a1 + '</span><button id="next"' + (st.page >= tot - 1 ? " disabled" : "") + ">Berikutnya ➡</button></div>";
+    }
+    
     h += "</div></div>";
     app.innerHTML = h; mark();
     if (st._focusCari) { var inp = document.getElementById("cari"); if (inp) { inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (x) {} } st._focusCari = false; }
@@ -127,13 +134,25 @@
     if (e.target.id === "sel") loadSurat(+e.target.value);
     if (e.target.id === "qari") { st.qari = e.target.value; stop(); render(); }
   });
+  
+  // Perbaikan handler klik untuk navigasi
   app.addEventListener("click", function (e) {
     var t = e.target;
     var pick = t.closest && t.closest("[data-pick]");
     if (pick) { loadSurat(+pick.getAttribute("data-pick")); return; }
     if (t.id === "whole") { stop(); st.whole = !st.whole; st.page = 0; render(); return; }
     if (t.id === "auto") { st.auto = !st.auto; t.classList.toggle("on", st.auto); return; }
-    if (t.id === "prev" || t.id === "next") { stop(); st.page += t.id === "next" ? 1 : -1; render(); return; }
+    
+    var btn = t.closest && t.closest("button");
+    if (btn && (btn.id === "prev" || btn.id === "next")) {
+      stop(); 
+      st.page += btn.id === "next" ? 1 : -1; 
+      render();
+      var mid = app.querySelector(".mid");
+      if (mid) mid.scrollTop = 0; // Scroll ke atas saat ganti halaman
+      return;
+    }
+    
     var act = t.getAttribute && t.getAttribute("data-act"); if (!act) return;
     var box = t.closest(".ay"), i = +box.getAttribute("data-i");
     if (act === "play") {
