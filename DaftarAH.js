@@ -113,23 +113,28 @@
 
           // Isi Bab
           currentBab.isi.forEach(function(item, iIdx) {
-            h += '<div class="card" id="item-' + iIdx + '" style="display:flex; flex-direction:column; gap:5px; padding:10px;">';
-            
-            // Khusus Tampilan 99 Asmaul Husna
+            // === LAYOUT KHUSUS 99 ASMAUL HUSNA ===
             if (currentBab.judul === "99 Asmaul Husna") {
-              h += '<div style="display:flex; justify-content:space-between; align-items:center;">';
-              h += '<div class="nm" style="font-size:1rem;">' + item.no + '. ' + esc(item.tr) + '</div>';
-              h += '<div style="font-weight:bold; color:#c9b86a; font-size:.9rem;">' + esc(item.arti) + '</div>';
+              h += '<div class="card" id="item-' + iIdx + '" style="padding:12px;">';
+              h += '<div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">';
+              // Kiri: Nomor + Latin + Arti (Bertumpuk)
+              h += '<div style="flex:1; min-width:0;">';
+              h += '<div style="font-weight:700; font-size:1rem; color:#e6ecdc;">' + item.no + '. ' + esc(item.tr) + '</div>';
+              h += '<div style="color:#c9b86a; font-size:.9rem; margin-top:6px; font-weight:600;">' + esc(item.arti) + '</div>';
               h += '</div>';
-              h += '<div class="ar" style="margin:0; font-size:calc(24px * var(--z,1));">' + esc(item.ar) + '</div>';
+              // Kanan: Teks Arab (Sendiri)
+              h += '<div class="ar" style="margin:0; text-align:right; font-size:calc(26px * var(--z,1)); flex-shrink:0; max-width:50%;">' + esc(item.ar) + '</div>';
+              h += '</div>';
+              h += '</div>';
             } 
-            // Tampilan Umum (Dalil, Qoshidah, Doa)
+            // === LAYOUT BAB LAIN (Dalil, Qoshidah, Doa) ===
             else {
+              h += '<div class="card" id="item-' + iIdx + '" style="display:flex; flex-direction:column; gap:5px; padding:10px;">';
               h += '<div class="ar" style="margin:5px 0;">' + esc(item.ar) + '</div>';
               h += '<div class="lt" style="font-style:italic; margin-bottom:5px;">' + esc(item.tr) + '</div>';
               h += '<div class="tr" style="font-weight:bold;">' + esc(item.arti) + '</div>';
+              h += '</div>';
             }
-            h += '</div>';
           });
         }
       }
@@ -171,7 +176,7 @@
   app.addEventListener("change", function(e) {
     if (e.target.id === "sel-bab") {
       st.selectedBabIdx = +e.target.value;
-      st.cari = ""; // Reset pencarian saat ganti judul
+      st.cari = ""; 
       render();
     }
   });
@@ -182,10 +187,10 @@
       var bIdx = +btn.getAttribute("data-bab");
       var iIdx = btn.getAttribute("data-item");
       
-      st.selectedBabIdx = bIdx; // Pindah ke judul yang sesuai
-      st.jumpTo = { i: iIdx };  // Tandai item yang mau disorot
-      st.cari = "";             // Tutup kotak pencarian
-      render();                 // Render ulang (setelah render, sistem akan scroll ke item)
+      st.selectedBabIdx = bIdx;
+      st.jumpTo = { i: iIdx };
+      st.cari = ""; 
+      render(); 
     }
   });
 
