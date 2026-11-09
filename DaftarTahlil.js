@@ -1,21 +1,22 @@
-/* Shared JS Mesin Tahlilan */
+/* Shared JS Hadiah & Tahlil */
 (function () {
   var app = document.getElementById("app");
   if (!app) return;
 
-  // Daftar menu sesuai urutan permintaan Boss
+  // Daftar menu. Yasin diambil dari API, sisanya dari folder Data/
   var MENU = [
-    { label: "Tahlil Ringkas", file: "TahlilRingkas.js", key: "Tahlil Ringkas" },
-    { label: "Tahlil Lengkap", file: "TahlilLengkap.js", key: "Tahlil Lengkap" },
-    { label: "Tahlil Majlis", file: "TahlilMajlis.js", key: "Tahlil Majlis" },
-    { label: "Doa Tahlil 1", file: "DoaTahlil1.js", key: "Doa Tahlil 1" },
-    { label: "Doa Tahlil 2", file: "DoaTahlil2.js", key: "Doa Tahlil 2" },
-    { label: "Doa Tahlil 3", file: "DoaTahlil3.js", key: "Doa Tahlil 3" },
-    { label: "Doa Tahlil 4", file: "DoaTahlil4.js", key: "Doa Tahlil 4" },
-    { label: "Doa Tahlil 5", file: "DoaTahlil5.js", key: "Doa Tahlil 5" },
-    { label: "Doa Al-Fatihah 1", file: "DoaFatihahl1.js", key: "Doa Al-Fatihah 1" },
-    { label: "Doa Al-Fatihah 2", file: "DoaFatihahl2.js", key: "Doa Al-Fatihah 2" },
-    { label: "Doa Al-Fatihah 3", file: "DoaFatihahl3.js", key: "Doa Al-Fatihah 3" }
+    { label: "Surat Yasin", type: "api", id: 36 },
+    { label: "Tahlil Ringkas", type: "js", file: "TahlilRingkas.js", key: "Tahlil Ringkas" },
+    { label: "Tahlil Lengkap", type: "js", file: "TahlilLengkap.js", key: "Tahlil Lengkap" },
+    { label: "Tahlil Majlis", type: "js", file: "TahlilMajlis.js", key: "Tahlil Majlis" },
+    { label: "Doa Tahlil 1", type: "js", file: "DoaTahlil1.js", key: "Doa Tahlil 1" },
+    { label: "Doa Tahlil 2", type: "js", file: "DoaTahlil2.js", key: "Doa Tahlil 2" },
+    { label: "Doa Tahlil 3", type: "js", file: "DoaTahlil3.js", key: "Doa Tahlil 3" },
+    { label: "Doa Tahlil 4", type: "js", file: "DoaTahlil4.js", key: "Doa Tahlil 4" },
+    { label: "Doa Tahlil 5", type: "js", file: "DoaTahlil5.js", key: "Doa Tahlil 5" },
+    { label: "Doa Al-Fatihah 1", type: "js", file: "DoaFatihahl1.js", key: "Doa Al-Fatihah 1" },
+    { label: "Doa Al-Fatihah 2", type: "js", file: "DoaFatihahl2.js", key: "Doa Al-Fatihah 2" },
+    { label: "Doa Al-Fatihah 3", type: "js", file: "DoaFatihahl3.js", key: "Doa Al-Fatihah 3" }
   ];
 
   var st = { data: null, cari: "", _focusCari: false, selectedIdx: -1, loading: false };
@@ -23,7 +24,41 @@
 
   function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   
-  function loadFile(fileName, keyName, callback) {
+  // Muat Surat Yasin dari API
+  function loadApi(id) {
+    st.loading = true;
+    render();
+    
+    fetch("https://equran.id/api/v2/surat/" + id)
+      .then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function(j) {
+        var d = j.data;
+        var isi = d.ayat.map(function(a) {
+          return {
+            ar: a.teksArab,
+            tr: a.teksLatin + "\n\n" + a.teksIndonesia
+          };
+        });
+        
+        st.data = {
+          bab: [{
+            judul: "Surat " + d.namaLatin + " (" + d.arti + ")",
+            isi: isi
+          }]
+        };
+        st.loading = false;
+        render();
+      })
+      .catch(function(e) {
+        st.loading = false;
+        st.data = null;
+        render();
+        alert("Gagal memuat Surat Yasin dari API.");
+      });
+  }
+
+  // Muat file Tahlil dari folder Data/
+  function loadFile(fileName, keyName) {
     st.loading = true;
     render(); 
     
@@ -41,7 +76,6 @@
       } else {
         st.data = null;
       }
-      if (callback) callback();
       render();
     };
     
@@ -61,9 +95,9 @@
     // Top Bar: Dropdown Kiri, Cari Kanan
     h += '<div class="bar">';
     
-    // 1. Dropdown Tahlil
+    // 1. Dropdown
     h += '<select id="sel" style="flex:1; width:50%; min-width:0;">';
-    h += '<option value=""' + (st.selectedIdx === -1 ? " selected" : "") + '>Pilih Tahlil...</option>';
+    h += '<option value=""' + (st.selectedIdx === -1 ? " selected" : "") + '>Pilih Yasin/Tahlil...</option>';
     MENU.forEach(function(m, idx) {
       h += '<option value="' + idx + '"' + (st.selectedIdx === idx ? " selected" : "") + '>' + (idx+1) + '. ' + esc(m.label) + '</option>';
     });
@@ -80,7 +114,7 @@
     if (st.loading) {
       h += '<div class="msg">Memuat data...</div>';
     } else if (st.selectedIdx === -1) {
-      h += '<div class="msg" style="opacity:.6; background:transparent; border:none; margin-top:30px;">Silakan pilih salah satu Tahlil pada menu di atas.</div>';
+      h += '<div class="msg" style="opacity:.6; background:transparent; border:none; margin-top:30px;">Silakan pilih Surat Yasin atau Tahlil pada menu di atas.</div>';
     } else if (!st.data || !st.data.bab) {
       h += '<div class="msg">Data kosong atau file belum di-upload.</div>';
     } else {
@@ -155,7 +189,12 @@
         render();
       } else {
         st.selectedIdx = +val;
-        loadFile(MENU[st.selectedIdx].file, MENU[st.selectedIdx].key);
+        var selected = MENU[st.selectedIdx];
+        if (selected.type === "api") {
+          loadApi(selected.id);
+        } else {
+          loadFile(selected.file, selected.key);
+        }
       }
     }
   });
