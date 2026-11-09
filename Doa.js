@@ -39,10 +39,11 @@
     var arti = d.arti || d.idn || "";
     var ref = d.tentang || d.referensi || "";
     
+    // Tambahan style display:block !important agar tidak disembunyikan oleh mode "Arab Saja"
     if (ar) h += '<div class="ar">' + esc(ar) + '</div>';
-    if (tr) h += '<div class="lt">' + esc(tr) + '</div>';
-    if (arti) h += '<div class="tr">' + esc(arti) + '</div>';
-    if (ref) h += '<div class="sub" style="margin-top:10px; opacity:.7">📚 ' + esc(ref) + '</div>';
+    if (tr) h += '<div class="lt" style="display:block !important;">' + esc(tr) + '</div>';
+    if (arti) h += '<div class="tr" style="display:block !important;">' + esc(arti) + '</div>';
+    if (ref) h += '<div class="sub" style="margin-top:10px; opacity:.7; display:block !important;">📚 ' + esc(ref) + '</div>';
     
     h += '</div>';
     return h;
@@ -108,7 +109,7 @@
     h += '</div>'; // tutup mid
 
     // --- BOTTOM BAR ---
-    h += '<div class="bot"></div>'; // Sengaja dikosongkan karena scroll sudah ditangani .mid
+    h += '<div class="bot"></div>'; // Kosong karena scroll sudah ditangani .mid
 
     h += '</div>'; // tutup w
     app.innerHTML = h;
