@@ -3,7 +3,6 @@
   var app = document.getElementById("app");
   if (!app) return;
 
-  // Mode: "empty" (awal), "all" (semua), "single" (satu doa)
   var st = { list: [], cari: "", _focusCari: false, viewMode: "empty", selectedIdx: -1, searchResults: [] };
 
   function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
@@ -16,7 +15,6 @@
   function msg(t) { app.innerHTML = '<div class="w"><div class="msg">' + t + "</div></div>"; }
   function gagal(e) { msg("Gagal memuat data (" + esc(e && e.message) + ").<br>Periksa koneksi internet, atau buka langsung di <a href='https://equran.id' target='_blank' rel='noopener'>equran.id</a>."); }
 
-  // 1. Ambil Data
   function loadData() {
     msg("Memuat daftar doa...");
     fetch("https://equran.id/api/doa")
@@ -28,9 +26,10 @@
       }).catch(gagal);
   }
 
-  // 2. Kartu Tampilan Doa
   function renderCard(d) {
     var h = '<div class="card">';
+    
+    // Judul
     h += '<div class="nm">' + esc(d.nama || d.judul) + '</div>';
     if (d.grup) h += '<div class="sub">' + esc(d.grup) + '</div>';
     
@@ -39,24 +38,26 @@
     var arti = d.arti || d.idn || "";
     var ref = d.tentang || d.referensi || "";
     
-    // Tambahan style display:block !important agar tidak disembunyikan oleh mode "Arab Saja"
+    // Arab
     if (ar) h += '<div class="ar">' + esc(ar) + '</div>';
-    if (tr) h += '<div class="lt" style="display:block !important;">' + esc(tr) + '</div>';
-    if (arti) h += '<div class="tr" style="display:block !important;">' + esc(arti) + '</div>';
-    if (ref) h += '<div class="sub" style="margin-top:10px; opacity:.7; display:block !important;">📚 ' + esc(ref) + '</div>';
+    
+    // Latin (Menggunakan class .lt agar ikut hilang saat mode Arab Saja)
+    if (tr) h += '<div class="lt">' + esc(tr) + '</div>';
+    
+    // Arti (Menggunakan class .tr agar ikut hilang saat mode Arab Saja)
+    if (arti) h += '<div class="tr">' + esc(arti) + '</div>';
+    
+    // Hadits/Referensi (Menggunakan class .lt dan .tf agar ikut tersembunyi di mode Arab Saja)
+    if (ref) h += '<div class="tf on" style="background:transparent; padding:0; margin-top:10px; color:#c9bd8a; font-size: calc(.9rem * var(--z,1));">📚 ' + esc(ref) + '</div>';
     
     h += '</div>';
     return h;
   }
 
-  // 3. Render Tampilan Utama
   function render() {
     var h = '<div class="w"><div class="top">';
     
-    // --- TOP BAR ---
     h += '<div class="bar">';
-    
-    // Dropdown Kiri
     h += '<select id="sel" style="flex:1; width:50%; min-width:0;">';
     h += '<option value="empty"' + (st.viewMode === "empty" ? " selected" : "") + '>Pilih Doa</option>';
     h += '<option value="all"' + (st.viewMode === "all" ? " selected" : "") + '>Pilih Semua (Scroll)</option>';
@@ -67,16 +68,12 @@
     });
     h += '</select>';
     
-    // Kotak Cari Kanan
     h += '<input id="cari" type="text" placeholder="Cari Doa..." value="' + esc(st.cari) + '" style="flex:1; width:50%; min-width:0;">';
-    
-    h += '</div></div>'; // tutup top
+    h += '</div></div>'; 
 
-    // --- MIDDLE (Area Konten) ---
     h += '<div class="mid">';
     
     if (st.cari && st.cari.trim()) {
-      // TAMPILAN PENCARIAN
       var q = st.cari.toLowerCase().trim();
       st.searchResults = st.list.map(function(d, idx) { return {d:d, idx:idx}; }).filter(function(x) {
         var pool = [(x.d.nama || x.d.judul || ""), (x.d.grup || ""), (x.d.arti || x.d.idn || "")].join(" ").toLowerCase();
@@ -94,27 +91,21 @@
         h += '</div>';
       }
     } else if (st.viewMode === "empty") {
-      // TAMPILAN AWAL KOSONG
       h += '<div class="msg" style="opacity:.6; background:transparent; border:none; margin-top:30px;">Silakan pilih doa pada menu di atas,<br>atau pilih "Pilih Semua (Scroll)" untuk melihat seluruh doa.</div>';
     } else if (st.viewMode === "all") {
-      // TAMPILAN SEMUA DOA (Scroll ke bawah)
       for (var i = 0; i < st.list.length; i++) {
         h += renderCard(st.list[i]);
       }
     } else if (st.viewMode === "single" && st.selectedIdx >= 0) {
-      // TAMPILAN SATU DOA SAJA
       h += renderCard(st.list[st.selectedIdx]);
     }
     
-    h += '</div>'; // tutup mid
+    h += '</div>'; 
+    h += '<div class="bot"></div>'; 
+    h += '</div>'; 
 
-    // --- BOTTOM BAR ---
-    h += '<div class="bot"></div>'; // Kosong karena scroll sudah ditangani .mid
-
-    h += '</div>'; // tutup w
     app.innerHTML = h;
 
-    // Fokus kembali ke kotak pencarian
     if (st._focusCari) {
       var inp = document.getElementById("cari");
       if (inp) { inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (x) {} }
@@ -122,7 +113,6 @@
     }
   }
 
-  // 4. Event Handler
   app.addEventListener("input", function (e) {
     if (e.target.id === "cari") {
       st.cari = e.target.value;
@@ -134,7 +124,7 @@
   app.addEventListener("change", function (e) {
     if (e.target.id === "sel") {
       var val = e.target.value;
-      st.cari = ""; // Reset pencarian jika dropdown diubah
+      st.cari = ""; 
       
       if (val === "empty") {
         st.viewMode = "empty";
@@ -148,7 +138,6 @@
       }
       render();
       
-      // Scroll ke paling atas
       var mid = app.querySelector(".mid");
       if (mid) mid.scrollTop = 0;
     }
@@ -156,14 +145,12 @@
 
   app.addEventListener("click", function (e) {
     var t = e.target;
-    
-    // Aksi saat mengklik hasil pencarian
     var pick = t.closest && t.closest("[data-pick]");
     if (pick) {
       var idx = +pick.getAttribute("data-pick");
-      st.viewMode = "single"; // Pindah ke mode tampil 1 doa
+      st.viewMode = "single"; 
       st.selectedIdx = idx;
-      st.cari = ""; // Tutup kotak pencarian
+      st.cari = ""; 
       render();
       
       var mid = app.querySelector(".mid");
@@ -172,6 +159,5 @@
     }
   });
 
-  // Jalankan
   loadData();
 })();
