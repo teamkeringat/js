@@ -3,8 +3,9 @@
   var app = document.getElementById("app");
   if (!app) return;
 
-  var st = { list: [], filtered: [], page: 0, cari: "", _focusCari: false };
-  var PER = 10; // Tampilkan 10 doa per halaman
+  // Menambahkan st.selectedDoa untuk menyimpan status pilihan dropdown
+  var st = { list: [], filtered: [], page: 0, cari: "", _focusCari: false, selectedDoa: "" };
+  var PER = 10;
 
   function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function hl(text, q) {
@@ -16,7 +17,6 @@
   function msg(t) { app.innerHTML = '<div class="w"><div class="msg">' + t + "</div></div>"; }
   function gagal(e) { msg("Gagal memuat data (" + esc(e && e.message) + ").<br>Periksa koneksi internet, atau buka langsung di <a href='https://equran.id' target='_blank' rel='noopener'>equran.id</a>."); }
 
-  // 1. Ambil Data dari API
   function loadData() {
     msg("Memuat daftar doa...");
     fetch("https://equran.id/api/doa")
@@ -29,7 +29,6 @@
       }).catch(gagal);
   }
 
-  // 2. Filter Pencarian
   function applySearch() {
     var q = st.cari.toLowerCase().trim();
     if (!q) {
@@ -42,7 +41,6 @@
     }
   }
 
-  // 3. Render Tampilan (Top, Mid, Bot)
   function render() {
     applySearch();
     
@@ -59,17 +57,20 @@
     
     // 1. Kiri: Dropdown Pilihan Doa
     h += '<select id="sel" style="flex:1; width:50%; min-width:0;">';
-    // Teks "Pilih Doa" sebagai opsi default (selected)
-    h += '<option value="" selected>Pilih Doa</option>';
+    
+    // Kondisi: Jika st.selectedDoa kosong, maka "Pilih Doa" yang terpilih
+    h += '<option value=""' + (st.selectedDoa === "" ? " selected" : "") + '>Pilih Doa</option>';
     
     if (searching && total > 0) {
       st.filtered.forEach(function(d) {
         var realIdx = st.list.indexOf(d);
-        h += '<option value="' + realIdx + '">' + esc(d.nama || d.judul) + '</option>';
+        var isSel = (String(st.selectedDoa) === String(realIdx)) ? " selected" : "";
+        h += '<option value="' + realIdx + '"' + isSel + '>' + esc(d.nama || d.judul) + '</option>';
       });
     } else {
       st.list.forEach(function(d, idx) {
-        h += '<option value="' + idx + '">' + (idx+1) + '. ' + esc(d.nama || d.judul) + '</option>';
+        var isSel = (String(st.selectedDoa) === String(idx)) ? " selected" : "";
+        h += '<option value="' + idx + '"' + isSel + '>' + (idx+1) + '. ' + esc(d.nama || d.judul) + '</option>';
       });
     }
     h += '</select>';
@@ -116,7 +117,6 @@
     h += '</div>'; // tutup w
     app.innerHTML = h;
 
-    // Fokus kembali ke kotak cari jika sedang mengetik
     if (st._focusCari) {
       var inp = document.getElementById("cari");
       if (inp) { inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (x) {} }
@@ -124,11 +124,11 @@
     }
   }
 
-  // 4. Event Handler
   app.addEventListener("input", function (e) {
     if (e.target.id === "cari") {
       st.cari = e.target.value;
       st.page = 0;
+      st.selectedDoa = ""; // Reset dropdown ke "Pilih Doa" saat mencari
       st._focusCari = true;
       render();
     }
@@ -137,13 +137,14 @@
   app.addEventListener("change", function (e) {
     if (e.target.id === "sel") {
       var val = e.target.value;
-      // Jika user memilih "Pilih Doa" (value kosong), abaikan
+      st.selectedDoa = val; // Simpan status pilihan
+      
       if (val === "") return; 
       
       var idx = +val;
       if (idx >= 0 && idx < st.list.length) {
-         st.page = Math.floor(idx / PER); // Lompat ke halaman doa yang dipilih
-         st.cari = ""; // Bersihkan pencarian
+         st.page = Math.floor(idx / PER); 
+         st.cari = ""; 
          render();
       }
     }
@@ -153,6 +154,7 @@
     var t = e.target;
     if (t.id === "prev" || t.id === "next") {
       st.page += t.id === "next" ? 1 : -1;
+      st.selectedDoa = ""; // Reset dropdown kembali ke "Pilih Doa" saat pindah halaman
       render();
       var mid = app.querySelector(".mid");
       if (mid) mid.scrollTop = 0;
@@ -160,6 +162,5 @@
     }
   });
 
-  // Jalankan
   loadData();
 })();
