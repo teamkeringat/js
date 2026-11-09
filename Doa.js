@@ -54,11 +54,11 @@
 
     var h = '<div class="w"><div class="top">';
     
-    // --- TOP BAR ---
-    h += '<div class="bar"><input id="cari" type="text" placeholder="Cari Doa" value="' + esc(st.cari) + '"></div>';
+    // --- TOP BAR (1 Baris, 2 Kolom Sejajar) ---
+    h += '<div class="bar">';
     
-    // Dropdown Pilihan Doa
-    h += '<div class="bar"><select id="sel">';
+    // 1. Kiri: Dropdown Pilihan Doa
+    h += '<select id="sel" style="flex:1; width:50%; min-width:0;">';
     if (searching && total > 0) {
       st.filtered.forEach(function(d) {
         var realIdx = st.list.indexOf(d);
@@ -70,7 +70,12 @@
         h += '<option value="' + idx + '"' + sel + '>' + (idx+1) + '. ' + esc(d.nama || d.judul) + '</option>';
       });
     }
-    h += '</select></div>';
+    h += '</select>';
+    
+    // 2. Kanan: Kotak Cari Doa
+    h += '<input id="cari" type="text" placeholder="Cari Doa" value="' + esc(st.cari) + '" style="flex:1; width:50%; min-width:0;">';
+    
+    h += '</div>'; // tutup bar
     h += '</div>'; // tutup top
 
     // --- MIDDLE (Area Scroll) ---
