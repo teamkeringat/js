@@ -1,21 +1,32 @@
-/* Shared JS Mesin Khutbah (Kategori & Topik) */
+/* Shared JS Mesin Khutbah (Dengan Pembuka & Penutup Otomatis) */
 (function () {
   var app = document.getElementById("app");
   if (!app) return;
 
-  // Daftar Kategori
+  // Daftar Kategori (Sudah ditambah Khutbah Jumat)
   var KATEGORI = [
     { label: "Khutbah Idul Fitri", key: "Khutbah Idul Fitri" },
     { label: "Khutbah Idul Adha", key: "Khutbah Idul Adha" },
+    { label: "Khutbah Jumat", key: "Khutbah Jumat" },
     { label: "Khutbah Nikah", key: "Khutbah Nikah" }
   ];
+
+  // === TEKS STANDAR KHUTBAH (OTOMATIS) ===
+  var SALAM_1 = "السَّلاَمُ عَلَيْكُمْ وَرَحْمَةُ اللهِ وَبَرَكَاتُهُ. إِنَّ الْحَمْدَ لِلّٰهِ نَحْمَدُهُ وَنَسْتَعِيْنُهُ وَنَسْتَغْفِرُهُ. وَنَعُوْذُ بِاللّٰهِ مِنْ شُرُوْرِ أَنْفُسِنَا وَمِنْ سَيِّئَاتِ أَعْمَالِنَا. مَنْ يَهْدِهِ اللّٰهُ فَلَا مُضِلَّ لَهُ وَمَنْ يُضْلِلْ فَلَا هَادِيَ لَهُ. أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللّٰهُ وَأَشْهَدُ أَنَّ مُحَمَّدًا رَسُوْلُ اللّٰهِ. اَللّٰهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ وَعَلَى آلِهِ وَصَحْبِهِ أَجْمَعِيْنَ. أَمَّا بَعْدُ، فَيَا عِبَادَ اللّٰهِ، أُوْصِيْكُمْ وَنَفْسِيْ بِتَقْوَى اللّٰهِ.\n\n";
+  var TR_SALAM_1 = "Assalamu'alaikum warahmatullahi wabarakatuh. Sesungguhnya segala puji bagi Allah, kami memuji-Nya, memohon pertolongan dan ampunan-Nya. Kami berlindung kepada Allah dari keburukan diri kami dan kejelekan amal perbuatan kami. Barangsiapa yang diberi petunjuk oleh Allah, maka tidak ada yang dapat menyesatkannya. Aku bersaksi tiada Tuhan selain Allah dan Muhammad adalah Rasul-Nya. Ya Allah, limpahkanlah shalawat kepada Nabi Muhammad beserta keluarga dan sahabatnya. Amma ba'du, wahai hamba Allah, aku berwasiat kepada kalian dan diriku untuk bertakwa kepada Allah.\n\n";
+  
+  var SALAM_2 = "اَلْحَمْدُ لِلّٰهِ الَّذِيْ هَدَانَا لِهَذَا وَمَا كُنَّا لِنَهْتَدِيَ لَوْلَا أَنْ هَدَانَا اللّٰهُ. أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللّٰهُ وَأَشْهَدُ أَنَّ مُحَمَّدًا رَسُوْلُ اللّٰهِ. اَللّٰهُمَّ صَلِّ عَلَى سَيِّدِنَا مُحَمَّدٍ وَعَلَى آلِهِ وَصَحْبِهِ أَجْمَعِيْنَ. أَمَّا بَعْدُ، فَيَا عِبَادَ اللّٰهِ، اِتَّقُوا اللّٰهَ حَقَّ تُقَاتِهِ.\n\n";
+  var TR_SALAM_2 = "Segala puji bagi Allah yang telah memberi petunjuk kepada kami... Amma ba'du, wahai hamba-hamba Allah, bertakwalah kepada Allah dengan sebenar-benarnya takwa.\n\n";
+
+  var DOA_PENUTUP = "\n\nاَللّٰهُمَّ اغْفِرْ لِلْمُسْلِمِيْنَ وَالْمُسْلِمَاتِ، وَالْمُؤْمِنِيْنَ وَالْمُؤْمِنَاتِ، اَلْأَحْيَاءِ مِنْهُمْ وَالْأَمْوَاتِ. رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ. وَالسَّلاَمُ عَلَيْكُمْ وَرَحْمَةُ اللهِ وَبَرَكَاتُهُ.";
+  var TR_DOA_PENUTUP = "\n\nYa Allah, ampunilah kaum muslimin dan muslimat, mukminin dan mukminat, baik yang masih hidup maupun yang telah wafat. Ya Tuhan kami, berilah kami kebaikan di dunia dan akhirat, serta lindungilah kami dari api neraka. Wassalamu'alaikum warahmatullahi wabarakatuh.";
+  // =======================================
 
   var st = { katIdx: 0, topikIdx: 0, cari: "", _focusCari: false, loading: false, jumpTo: null };
   var BASE_URL = "https://teamkeringat.github.io/Data/"; 
 
   function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 
-  // Highlight teks
   function hl(text, q) {
     text = String(text || ""); 
     if (!q) return esc(text);
@@ -53,7 +64,6 @@
     document.body.appendChild(script);
   }
 
-  // Ambil data topik aktif
   function getActiveBab() {
     if (!window.KONTEN) return null;
     var key = KATEGORI[st.katIdx].key;
@@ -61,7 +71,6 @@
     return window.KONTEN[key].bab;
   }
 
-  // Fungsi pencarian
   function getSearchResults(q) {
     var babList = getActiveBab();
     if (!babList || !q) return [];
@@ -70,11 +79,9 @@
     q = q.toLowerCase();
     
     babList.forEach(function(b, bIdx) {
-      // Cari Judul Topik
       if (b.judul && b.judul.toLowerCase().indexOf(q) > -1) {
         res.push({ type: "judul", b: bIdx, text: b.judul, label: "📌 Judul: " + b.judul });
       }
-      // Cari Isi Teks
       b.isi.forEach(function(item, iIdx) {
         if (item.ar && item.ar.indexOf(q) > -1) {
           res.push({ type: "isi", b: bIdx, i: iIdx, text: item.ar, label: "Arab: " + item.ar });
@@ -90,22 +97,17 @@
   function render() {
     var h = '<div class="w"><div class="top">';
     
-    // --- BARIS 1: PENCARIAN ---
     h += '<div class="bar" style="margin-bottom:8px;">';
     h += '<input id="cari" type="text" placeholder="Cari teks khutbah..." value="' + esc(st.cari) + '" style="width:100%;">';
     h += '</div>';
 
-    // --- BARIS 2: KATEGORI & TOPIK ---
     h += '<div class="bar">';
-    
-    // Dropdown Kiri (Kategori)
     h += '<select id="sel-kat" style="flex:1; width:50%; min-width:0;">';
     KATEGORI.forEach(function(k, idx) {
       h += '<option value="' + idx + '"' + (st.katIdx === idx ? " selected" : "") + '>' + esc(k.label) + '</option>';
     });
     h += '</select>';
     
-    // Dropdown Kanan (Topik/Judul)
     h += '<select id="sel-topik" style="flex:1; width:50%; min-width:0;">';
     var babList = getActiveBab();
     if (babList) {
@@ -114,10 +116,8 @@
       });
     }
     h += '</select>';
-    
     h += '</div></div>'; 
 
-    // --- KONTEN AREA ---
     h += '<div class="mid">';
     
     if (st.loading) {
@@ -128,7 +128,6 @@
       var q = st.cari.toLowerCase().trim();
       var currentBab = babList[st.topikIdx];
 
-      // MODE PENCARIAN
       if (q) {
         var results = getSearchResults(q);
         if (!results.length) {
@@ -148,34 +147,43 @@
           h += '</div>';
         }
       } 
-      // MODE NORMAL (TAMPILKAN TEKS)
       else {
         if (!currentBab) {
           h += '<div class="msg">Silakan pilih judul khutbah.</div>';
         } else {
-          // Judul Topik
           h += '<div class="card" id="bab-0" style="margin-bottom:8px; background:rgba(201,184,106,0.1); border-color:#c9b86a;">';
           h += '<div class="nm" style="color:#c9b86a;">' + esc(currentBab.judul) + '</div>';
           h += '</div>';
 
-          // Isi Teks
           currentBab.isi.forEach(function(item, iIdx) {
             h += '<div class="card" id="ay-0-' + iIdx + '">';
-            if (item.ar) h += '<div class="ar">' + esc(item.ar) + '</div>';
-            if (item.tr) h += '<div class="tr" style="white-space:pre-wrap; margin-top:10px;">' + esc(item.tr) + '</div>';
+            
+            var arText = item.ar;
+            var trText = item.tr;
+            
+            // Penyisipan otomatis pembuka & penutup
+            if (iIdx === 0) { 
+              arText = SALAM_1 + arText;
+              trText = TR_SALAM_1 + trText;
+            } else if (iIdx === 1) { 
+              arText = SALAM_2 + arText + DOA_PENUTUP;
+              trText = TR_SALAM_2 + trText + TR_DOA_PENUTUP;
+            }
+
+            if (arText) h += '<div class="ar">' + esc(arText) + '</div>';
+            if (trText) h += '<div class="tr" style="white-space:pre-wrap; margin-top:10px;">' + esc(trText) + '</div>';
             h += '</div>';
           });
         }
       }
     }
     
-    h += '</div>'; // tutup mid
+    h += '</div>'; 
     h += '<div class="bot"></div>'; 
-    h += '</div>'; // tutup w
+    h += '</div>'; 
 
     app.innerHTML = h;
 
-    // LOMPAT KE TEKS YANG DICARI
     if (st.jumpTo) {
       var targetId = st.jumpTo.i !== "" ? 'ay-0-' + st.jumpTo.i : 'bab-0';
       var el = document.getElementById(targetId);
@@ -197,7 +205,6 @@
     }
   }
 
-  // Events
   app.addEventListener("input", function(e) {
     if (e.target.id === "cari") {
       st.cari = e.target.value;
@@ -209,7 +216,7 @@
   app.addEventListener("change", function(e) {
     if (e.target.id === "sel-kat") {
       st.katIdx = +e.target.value;
-      st.topikIdx = 0; // Reset ke topik pertama saat ganti kategori
+      st.topikIdx = 0; 
       st.cari = ""; 
       render();
     }
@@ -226,7 +233,6 @@
       var bIdx = +btn.getAttribute("data-pick");
       var subIdx = btn.getAttribute("data-sub"); 
       
-      // Update topik jika hasil pencarian ada di topik yang berbeda
       if (st.topikIdx !== bIdx) {
         st.topikIdx = bIdx;
       }
@@ -237,6 +243,5 @@
     }
   });
 
-  // Muat data pertama kali
   loadData();
 })();
