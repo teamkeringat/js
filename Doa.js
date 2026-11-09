@@ -59,6 +59,9 @@
     
     // 1. Kiri: Dropdown Pilihan Doa
     h += '<select id="sel" style="flex:1; width:50%; min-width:0;">';
+    // Teks "Pilih Doa" sebagai opsi default (selected)
+    h += '<option value="" selected>Pilih Doa</option>';
+    
     if (searching && total > 0) {
       st.filtered.forEach(function(d) {
         var realIdx = st.list.indexOf(d);
@@ -66,8 +69,7 @@
       });
     } else {
       st.list.forEach(function(d, idx) {
-        var sel = (idx >= a0 && idx < a1) ? " selected" : "";
-        h += '<option value="' + idx + '"' + sel + '>' + (idx+1) + '. ' + esc(d.nama || d.judul) + '</option>';
+        h += '<option value="' + idx + '">' + (idx+1) + '. ' + esc(d.nama || d.judul) + '</option>';
       });
     }
     h += '</select>';
@@ -134,7 +136,11 @@
 
   app.addEventListener("change", function (e) {
     if (e.target.id === "sel") {
-      var idx = +e.target.value;
+      var val = e.target.value;
+      // Jika user memilih "Pilih Doa" (value kosong), abaikan
+      if (val === "") return; 
+      
+      var idx = +val;
       if (idx >= 0 && idx < st.list.length) {
          st.page = Math.floor(idx / PER); // Lompat ke halaman doa yang dipilih
          st.cari = ""; // Bersihkan pencarian
