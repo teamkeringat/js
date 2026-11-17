@@ -1,20 +1,34 @@
 /* ============================================================
-   MESIN READER UNIVERSAL (mesin-reader.js) - FINAL KOTAK JUDUL
+   MESIN READER UNIVERSAL (Versi 2.0)
+   Bisa membaca katalog apa saja (Maulid, Kitab Kuning, dll)
+   tanpa bentrok antar menu.
    ============================================================ */
 
-// --- FUNGSI 1: UNTUK MENU STATIS (Kitab, Kamus, Hadis) ---
 window.bukaReader = function(config) {
+    var app = document.getElementById("app");
+    if (!app) return;
+
+    // Pastikan struktur dasar HTML ada
+    if (!document.getElementById("main")) {
+        app.innerHTML = '<div class="bar-cari"><div class="srch-wrap"><input id="q" type="text" placeholder="Cari..." autocomplete="off"><div class="sg" id="sg"></div></div></div>' +
+        '<div class="bar-pilih"><select id="k" class="ph"><option value="" selected>Pilih Kitab</option></select><select id="b" class="ph"><option>Pembahasan</option></select></div>' +
+        '<div id="main"></div><p id="stat" style="font-size:.75rem;opacity:.7;margin-top:10px"></p>';
+    }
+
     var elJudul = document.getElementById("app-judul");
     if (elJudul) elJudul.textContent = config.judul || "Reader";
     
     var elQ = document.getElementById("q");
     if (elQ) elQ.placeholder = config.placeholderCari || "Cari...";
-    
+
+    // --- STATE TERISOLASI ---
     var st = { all: [], sel: 0, bi: "all", ob: {}, ld: {} };
     var LV = { P: "Pemula", M: "Menengah", L: "Lanjut" };
-    window.KITAB = window.KITAB || {};
+    var lokalKatalog = [];
+    var lokalKitab = {}; // Menyimpan isi kitab secara lokal agar tidak bentrok
 
-    function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&", "<": "<", ">": ">", '"': '"' }[c]; }); }
+    // --- FUNGSI BANTU ---
+    function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
     function teks(t) { return Array.isArray(t) ? t.join("\n\n") : (t == null ? "" : String(t)); }
     function norm(s) { return String(s || "").toLowerCase().replace(/[\u064B-\u065F\u0670\u0640]/g, "").replace(/q/g, "k").replace(/[^a-z0-9\u0600-\u06FF]/g, ""); }
     
@@ -31,35 +45,57 @@ window.bukaReader = function(config) {
     }
 
     function cariKitab(id) { return st.all.filter(function (x) { return x.id === id; })[0]; }
-    function buku(d) { return d ? window.KITAB[d.nama] : null; }
+    
+    // Cek isi kitab: Prioritaskan yang ada di lokal, baru cek global
+    function buku(d) { 
+        if (!d) return null;
+        return lokalKitab[d.nama] || window.KITAB[d.nama]; 
+    }
 
+    // --- 1. MEMBACA KATALOG (UNIVERSAL) ---
     function muatDataInduk() {
+        var namaVarGlobal = config.namaVariabel || "DATA_READER"; 
+        var oldData = window[namaVarGlobal]; // Simpan jika ada variabel global sebelumnya
+        
         var s = document.createElement("script");
         s.src = config.sumberData;
         s.onload = function() {
-            if (window.DATA_READER) {
+            var dataBaru = window[namaVarGlobal];
+            if (dataBaru && Array.isArray(dataBaru)) {
+                lokalKatalog = dataBaru;
+                
                 var n = 0;
-                window.DATA_READER.forEach(function (g) {
+                lokalKatalog.forEach(function (g) {
                     g[2].forEach(function (r) {
                         n++;
                         st.all.push({ id: n, grup: g[0], intro: g[1], nama: r[0], ar: r[1], ap: r[2], pl: r[3], arti: r[4], idn: r[5], lv: r[6] });
                     });
                 });
                 st.all.forEach(function (x) { x.nn = norm(x.nama); x.hay = norm([x.nama, x.pl, x.arti, x.ar, x.ap].join(" ")); });
+                
+                // Kembalikan variabel global ke asalnya (Isolasi)
+                if (oldData !== undefined) window[namaVarGlobal] = oldData;
+                else delete window[namaVarGlobal];
+                
                 view();
+            } else {
+                var m = document.getElementById("main");
+                if(m) m.innerHTML = '<div class="msg">Format tidak dikenali. Pastikan file berisi <code>' + namaVarGlobal + '</code>.</div>';
             }
         };
         s.onerror = function() {
             var m = document.getElementById("main");
-            if(m) m.innerHTML = '<div class="msg">Gagal memuat data dari ' + config.sumberData + '</div>';
+            if(m) m.innerHTML = '<div class="msg">Gagal memuat katalog dari ' + config.sumberData + '</div>';
         };
         document.head.appendChild(s);
     }
 
+    // --- 2. MEMANGGIL ISI KITAB ---
     function muatIsi(d) {
-        if (window.KITAB[d.nama]) { st.ld[d.id] = "ok"; return; }
+        if (lokalKitab[d.nama] || window.KITAB[d.nama]) { st.ld[d.id] = "ok"; return; }
         if (st.ld[d.id] === "load") return;
         st.ld[d.id] = "load";
+        
         var s = document.createElement("script"), done = false, t;
         function fin(ok) {
             if (done) return; done = true; clearTimeout(t);
@@ -67,14 +103,26 @@ window.bukaReader = function(config) {
             if (s.parentNode) s.parentNode.removeChild(s);
             if (st.sel === d.id) view();
         }
+        
         t = setTimeout(function () { fin(false); }, 20000);
-        s.onload = function () { fin(true); };
+        s.onload = function () { 
+            // Pindahkan isi dari global ke lokal agar tidak menimpa menu lain
+            if (window.KITAB[d.nama]) {
+                lokalKitab[d.nama] = window.KITAB[d.nama];
+                delete window.KITAB[d.nama]; // Bersihkan global
+            }
+            fin(true); 
+        };
         s.onerror = function () { fin(false); };
         s.async = true;
-        s.src = (window.KITAB_BASE || "") + namaFile(d.nama);
+        
+        // KITAB_BASE diambil dari file Daftar, jika tidak ada gunakan config
+        var base = window.KITAB_BASE || config.kitabBase || "";
+        s.src = base + namaFile(d.nama);
         document.head.appendChild(s);
     }
 
+    // --- 3. TAMPILAN ISI ---
     function itemHtml(x) {
         return '<div class="it">' +
         (x.ar ? '<div class="ar">' + esc(x.ar) + "</div>" : "") +
@@ -138,8 +186,8 @@ window.bukaReader = function(config) {
         
         if (elK) {
             var hk = '<option value=""' + (d ? "" : " selected") + ">" + config.labelPilih + "</option>";
-            if(window.DATA_READER) {
-                window.DATA_READER.forEach(function (g) {
+            if(lokalKatalog) {
+                lokalKatalog.forEach(function (g) {
                     hk += '<optgroup label="' + esc(g[0]) + '">';
                     st.all.forEach(function (x) { if (x.grup === g[0]) hk += '<option value="' + x.id + '"' + (x.id === st.sel ? " selected" : "") + ">" + esc(x.nama) + "</option>"; });
                     hk += "</optgroup>";
@@ -191,6 +239,7 @@ window.bukaReader = function(config) {
         box.innerHTML = h; box.className = "sg on";
         return r;
     }
+    
     function tutupSaran() { var el = document.getElementById("q"); if(el) el.value = ""; tampilSaran(); }
 
     var lastWarn = 0;
@@ -202,23 +251,20 @@ window.bukaReader = function(config) {
         alert(config.labelKosong);
     }
 
-    var elApp = document.getElementById("app");
-    if(elApp && !elApp.dataset.bound) {
-        elApp.dataset.bound = "1";
-        elApp.addEventListener("input", function (e) { if (e.target.id === "q") tampilSaran(); });
-        elApp.addEventListener("keydown", function (e) {
+    // --- 4. EVENT LISTENERS ---
+    if(!app.dataset.bound) {
+        app.dataset.bound = "1";
+        app.addEventListener("input", function (e) { if (e.target.id === "q") tampilSaran(); });
+        app.addEventListener("keydown", function (e) {
             if (e.target.id === "q" && e.key === "Enter") { var r = tampilSaran(); if (r[0]) { tutupSaran(); pilih(r[0].id); } }
             if (e.target.id === "b" && !st.sel) { e.preventDefault(); peringatan(); }
         });
-        elApp.addEventListener("mousedown", function (e) { if (e.target.id === "b" && !st.sel) { e.preventDefault(); e.target.blur(); peringatan(); } });
-        elApp.addEventListener("change", function (e) {
+        app.addEventListener("mousedown", function (e) { if (e.target.id === "b" && !st.sel) { e.preventDefault(); e.target.blur(); peringatan(); } });
+        app.addEventListener("change", function (e) {
             if (e.target.id === "k") pilih(+e.target.value || 0);
-            if (e.target.id === "b" && st.sel) { 
-                st.bi = e.target.value; 
-                view(); 
-            }
+            if (e.target.id === "b" && st.sel) { st.bi = e.target.value; view(); }
         });
-        elApp.addEventListener("click", function (e) {
+        app.addEventListener("click", function (e) {
             var t = e.target;
             var li = t.closest && t.closest(".li[data-id]");
             if (li) { var id = +li.getAttribute("data-id"); tutupSaran(); pilih(id); return; }
@@ -233,109 +279,10 @@ window.bukaReader = function(config) {
 
     window.addEventListener("ngpref", status);
     setTimeout(status, 2500);
-
     status();
+    
     var elB = document.getElementById("b");
     if(elB && !elB.innerHTML.trim()) elB.innerHTML = '<option value="all">Pembahasan</option>';
     
     muatDataInduk();
-};
-
-// --- FUNGSI 2: UNTUK MENU DOA (LANGSUNG DARI API EQURAN.ID) ---
-window.bukaDoaEQuran = function () {
-    var st = { all: [], sel: 0 };
-    var elQ = document.getElementById("q");
-    var elK = document.getElementById("k");
-    var elMain = document.getElementById("main");
-    var elStat = document.getElementById("stat");
-    var API = "https://equran.id/api/doa";
-
-    function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-
-    function status() {
-        if (!elStat) return;
-        var p = window.NGPREF;
-        if (p) elStat.textContent = "✅ Terhubung dengan pengaturan Ngelingan (Arab " + (p.font || 1) + ").";
-        else elStat.textContent = "⏳ Menunggu pengaturan Ngelingan...";
-    }
-
-    function renderDetail() {
-        var d = st.all.filter(function(x) { return String(x.id) === String(st.sel); })[0];
-        if (!d) {
-            elMain.innerHTML = '<div class="msg">Silakan pilih doa terlebih dahulu dari menu di atas.</div>';
-            return;
-        }
-        var h = '<div class="ic">' +
-                '<div class="bh">' + esc(d.nama) + '</div>' +
-                '<div class="ar">' + esc(d.ar) + '</div>' +
-                (d.tr ? '<div class="lt">' + esc(d.tr) + '</div>' : '') +
-                '<div class="tr">' + esc(d.idn) + '</div>' +
-                (d.tentang ? '<div class="tn">' + esc(d.tentang) + '</div>' : '') +
-                '</div>';
-        elMain.innerHTML = h;
-    }
-
-    function isiDropdown(dataArray) {
-        var h = '<option value="">Pilih Doa</option>';
-        dataArray.forEach(function (d) {
-            h += '<option value="' + esc(d.id) + '">' + esc(d.nama) + '</option>';
-        });
-        if(elK) elK.innerHTML = h;
-    }
-
-    if (elK && !elK.dataset.bound) {
-        elK.dataset.bound = "1";
-        elK.addEventListener("change", function(e) {
-            st.sel = e.target.value;
-            if(st.sel) elK.classList.remove("ph");
-            renderDetail();
-        });
-    }
-
-    if (elQ && !elQ.dataset.bound) {
-        elQ.dataset.bound = "1";
-        elQ.addEventListener("input", function(e) {
-            var q = e.target.value.toLowerCase();
-            var filter = st.all.filter(function(d) {
-                return (d.nama + " " + d.idn).toLowerCase().indexOf(q) >= 0;
-            });
-            isiDropdown(filter);
-            if (st.sel && !filter.some(function(d){ return String(d.id) === String(st.sel); })) {
-                st.sel = 0;
-                renderDetail();
-            }
-        });
-    }
-
-    window.addEventListener("ngpref", status);
-    setTimeout(status, 2500);
-
-    if(elMain) elMain.innerHTML = '<div class="msg">Memuat daftar doa...</div>';
-    
-    fetch(API)
-        .then(function(r) {
-            if (!r.ok) throw new Error("HTTP " + r.status);
-            return r.json();
-        })
-        .then(function(json) {
-            var doaList = json.data || json;
-            if (!Array.isArray(doaList)) throw new Error("Format data tidak dikenal");
-            
-            doaList.forEach(function(d, i) {
-                st.all.push({
-                    id: d.id || (i+1),
-                    grup: d.grup || "Doa Harian",
-                    nama: d.nama || "Tanpa Nama",
-                    ar: d.ar || d.arab || "",
-                    tr: d.latin || d.tr || "",
-                    idn: d.arti || d.idn || "",
-                    tentang: d.tentang || ""
-                });
-            });
-            isiDropdown(st.all);
-            renderDetail();
-        })
-        .catch(function(err) {
-            if(elMain) elMain.innerHTML = '<div class="msg">Gagal memuat doa: ' + err.message + '<br>Periksa koneksi internet.</div>';
-        });
 };
