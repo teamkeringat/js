@@ -217,54 +217,55 @@ window.bukaReader = function(config) {
     }
 
     function detail() {
-        var d = st.sel ? cariKitab(st.sel) : null;
-        if (!d) {
-            return '<div class="msg">' + (st.warn ? esc(config.labelKosong) + "<br>" : "") +
-                "Ketik nama di kotak pencarian, atau pilih " + esc(config.labelPilih) + ".</div>";
-        }
-        
-        var h = '<div class="ic">' +
-            '<div class="ar">' + esc(d.ar) + "</div>" +
-            '<div class="ap">' + esc(d.ap) + "</div>" +
-            '<div class="bh">' + esc(d.nama) + " — " + esc(d.arti) + "</div>" +
-            '<div class="tn">' + esc(d.pl) + " · " + esc(d.grup) + " · " + esc(LV[d.lv] || "") + "</div>" +
-            '<div class="tn">' + esc(d.idn) + "</div></div>";
-
-        var b = buku(d), sb;
-        if (!b) {
-            if (st.ld[d.id] === "fail") {
-                var pesanErr = st.ld[d.id + "_err"] || "Isi belum tersedia.";
-                var urlDicoba = st.ld[d.id + "_url"] || "";
-                return h + '<div class="msg" style="border:1px solid red; text-align:left;">' +
-                    '<b style="color:red">❌ GAGAL MEMUAT KITAB</b><br><br>' +
-                    '<b>Pesan:</b> ' + pesanErr + '<br><br>' +
-                    '<b>URL yang dicoba:</b><br>' +
-                    '<a href="' + esc(urlDicoba) + '" target="_blank" style="word-break:break-all;color:#c9b86a">' + esc(urlDicoba) + '</a>' +
-                    '<br><br><a href="#" data-retry="1" style="color:#c9b86a; font-weight:bold;">🔄 Coba Lagi</a></div>';
-            }
-            return h + '<div class="msg">⏳ Memuat isi kitab...</div>';
-        }
-
-        sb = b.sebutan || "Bab";
-        if (b.catatan) h += '<p class="pg">' + esc(b.catatan) + "</p>";
-        var bab = b.bab || [];
-        
-        if (st.bi === "all") {
-            bab.forEach(function (r, i) {
-                var k = d.id + ":" + i, on = st.ob[k] !== false;
-                h += '<div class="dd' + (on ? " on" : "") + '" data-b="' + k + '">' +
-                    '<div class="hd"><span class="nm">' + esc(r.judul) + '</span><span class="ch">›</span></div>' +
-                    '<div class="bd">' + isiBab(r) + "</div></div>";
-            });
-        } else {
-            var r1 = bab[+st.bi];
-            if (r1) {
-                h += '<div class="dd on"><div class="hd"><span class="nm">' + esc(sb) + " " + (+st.bi + 1) + ". " + esc(r1.judul) +
-                    '</span></div><div class="bd">' + isiBab(r1) + "</div></div>";
-            }
-        }
-        return h;
+    var d = st.sel ? cariKitab(st.sel) : null;
+    if (!d) {
+        return '<div class="msg">' + (st.warn ? esc(config.labelKosong) + "<br>" : "") +
+            "Ketik nama di kotak pencarian, atau pilih " + esc(config.labelPilih) + ".</div>";
     }
+    
+    // --- PERUBAHAN DISINI: JUDUL BOLD DIPINDAH KE PALING ATAS ---
+    var h = '<div class="ic">' +
+        '<div class="bh">' + esc(d.nama) + " — " + esc(d.arti) + "</div>" + // Judul di atas
+        '<div class="ar">' + esc(d.ar) + "</div>" + // Teks Arab di bawah judul
+        '<div class="ap">' + esc(d.ap) + "</div>" + // Pengarang Arab
+        '<div class="tn">' + esc(d.pl) + " · " + esc(d.grup) + " · " + esc(LV[d.lv] || "") + "</div>" +
+        '<div class="tn">' + esc(d.idn) + "</div></div>";
+
+    var b = buku(d), sb;
+    if (!b) {
+        if (st.ld[d.id] === "fail") {
+            var pesanErr = st.ld[d.id + "_err"] || "Isi belum tersedia.";
+            var urlDicoba = st.ld[d.id + "_url"] || "";
+            return h + '<div class="msg" style="border:1px solid red; text-align:left;">' +
+                '<b style="color:red">❌ GAGAL MEMUAT KITAB</b><br><br>' +
+                '<b>Pesan:</b> ' + pesanErr + '<br><br>' +
+                '<b>URL yang dicoba:</b><br>' +
+                '<a href="' + esc(urlDicoba) + '" target="_blank" style="word-break:break-all;color:#c9b86a">' + esc(urlDicoba) + '</a>' +
+                '<br><br><a href="#" data-retry="1" style="color:#c9b86a; font-weight:bold;">🔄 Coba Lagi</a></div>';
+        }
+        return h + '<div class="msg">⏳ Memuat isi kitab...</div>';
+    }
+
+    sb = b.sebutan || "Bab";
+    if (b.catatan) h += '<p class="pg">' + esc(b.catatan) + "</p>";
+    var bab = b.bab || [];
+    
+    if (st.bi === "all") {
+        bab.forEach(function (r, i) {
+            var k = d.id + ":" + i, on = st.ob[k] !== false;
+            h += '<div class="dd' + (on ? " on" : "") + '" data-b="' + k + '">' +
+                '<div class="hd"><span class="nm">' + esc(r.judul) + '</span><span class="ch">›</span></div>' +
+                '<div class="bd">' + isiBab(r) + "</div></div>";
+        });
+    } else {
+        var r1 = bab[+st.bi];
+        if (r1) {
+            h += '<div class="dd on"><div class="hd"><span class="nm">' + esc(sb) + " " + (+st.bi + 1) + ". " + esc(r1.judul) +
+                '</span></div><div class="bd">' + isiBab(r1) + "</div></div>";
+        }
+    }
+    return h;
+}
 
     function view() {
         var d = st.sel ? cariKitab(st.sel) : null;
