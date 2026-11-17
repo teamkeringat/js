@@ -1,5 +1,5 @@
 /* ============================================================
-   DAFTAR KITAB KUNING (Katalog)
+   DAFTAR KITAB KUNING (Katalog Lengkap)
    Lokasi: https://teamkeringat.github.io/js/Daftar-Kitab.js
    ============================================================ */
 
@@ -7,7 +7,6 @@
 window.KITAB_BASE = "https://teamkeringat.github.io/KitabKuning/";
 
 // 2. Daftar Katalog Kitab
-// Format: [kategori, pengantar, [ [nama, judulArab, pengarangArab, pengarangLatin, artiJudul, penjelasan, tingkat P/M/L], ... ]]
 window.DATA_READER = [
   ["Tauhid & Akidah", "Ilmu tentang keyakinan dasar dalam Islam.", [
     ["Aqidatul Awam", "عَقِيدَةُ الْعَوَامِّ", "أحمد المرزوقي", "Sayyid Ahmad al-Marzuqi", "Akidah orang awam", "Nazhom (syair) tauhid ringkas tentang sifat Alloh dan para rasul.", "P"],
