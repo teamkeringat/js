@@ -4,7 +4,7 @@
    ============================================================ */
 
 // 1. Alamat folder tempat file isi kitab maulid disimpan
-window.KITAB_BASE = "https://teamkeringat.github.io/KitabKuning/";
+window.KITAB_BASE = "https://teamkeringat.github.io/Kitab/";
 
 // 2. Daftar Katalog Maulid
 window.DATA_READER = [
