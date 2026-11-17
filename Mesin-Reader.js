@@ -1,27 +1,25 @@
 /* ============================================================
-   MESIN READER UNIVERSAL (Final Layout Fix)
+   MESIN READER UNIVERSAL (Final Fix - Bebas Flex)
    ============================================================ */
 
 window.bukaReader = function(config) {
     var app = document.getElementById("app");
     if (!app) return;
 
-    // Render HTML Dasar
-    if (!document.getElementById("main")) {
-        app.innerHTML =
-            '<div class="toolbar-fix">' +
-                '<div class="bar-cari"><div class="srch-wrap">' +
-                    '<input id="q" type="text" placeholder="' + (config.placeholderCari || "Cari...") + '" autocomplete="off">' +
-                    '<div class="sg" id="sg"></div>' +
-                '</div></div>' +
-                '<div class="bar-pilih">' +
-                    '<select id="k" class="ph"><option value="" selected>' + (config.labelPilih || "Pilih Kitab") + '</option></select>' +
-                    '<select id="b" class="ph"><option>Pembahasan</option></select>' +
-                '</div>' +
+    // Struktur disamakan persis dengan pola Asmaul Husna
+    app.innerHTML =
+        '<div class="toolbar-fix">' +
+            '<div class="bar-cari"><div class="srch-wrap">' +
+                '<input id="q" type="text" placeholder="' + (config.placeholderCari || "Cari...") + '" autocomplete="off">' +
+                '<div class="sg" id="sg"></div>' +
+            '</div></div>' +
+            '<div class="bar-pilih">' +
+                '<select id="k" class="ph"><option value="" selected>' + (config.labelPilih || "Pilih Kitab") + '</option></select>' +
+                '<select id="b" class="ph"><option>Pembahasan</option></select>' +
             '</div>' +
-            '<div id="main"></div>' +
-            '<p id="stat" style="font-size:.75rem;opacity:.7;margin-top:10px"></p>';
-    }
+        '</div>' +
+        '<div id="main"></div>' +
+        '<p id="stat" style="font-size:.75rem;opacity:.7;margin-top:10px"></p>';
 
     var st = { all: [], sel: 0, bi: "all", ob: {}, ld: {} };
     var LV = { P: "Pemula", M: "Menengah", L: "Lanjut" };
