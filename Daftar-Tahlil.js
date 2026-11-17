@@ -1,4 +1,4 @@
-window.KITAB_BASE = "https://teamkeringat.github.io/KitabKuning/";
+window.KITAB_BASE = "https://teamkeringat.github.io/Kitab/";
 
 window.DATA_READER = [
   ["Tahlil", "Susunan bacaan tahlil dan doa.", [
