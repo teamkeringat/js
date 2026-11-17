@@ -1,12 +1,13 @@
 /* ============================================================
-   MESIN READER UNIVERSAL (Versi 3.0 - Anti Gagal)
+   MESIN READER UNIVERSAL (Final Fix)
+   Membaca katalog dari window.DATA_READER
    ============================================================ */
 
 window.bukaReader = function(config) {
     var app = document.getElementById("app");
     if (!app) return;
 
-    // Pastikan struktur dasar HTML ada
+    // Pastikan struktur HTML dasar ada
     if (!document.getElementById("main")) {
         app.innerHTML = '<div class="bar-cari"><div class="srch-wrap"><input id="q" type="text" placeholder="Cari..." autocomplete="off"><div class="sg" id="sg"></div></div></div>' +
         '<div class="bar-pilih"><select id="k" class="ph"><option value="" selected>Pilih Kitab</option></select><select id="b" class="ph"><option>Pembahasan</option></select></div>' +
@@ -34,13 +35,15 @@ window.bukaReader = function(config) {
     function cariKitab(id) { return st.all.filter(function (x) { return x.id === id; })[0]; }
     function buku(d) { return d ? (lokalKitab[d.nama] || window.KITAB[d.nama]) : null; }
 
+    // --- MEMBACA KATALOG ---
     function muatDataInduk() {
-        var namaVarGlobal = config.namaVariabel || "DATA_READER"; 
-        var oldData = window[namaVarGlobal];
+        var namaVar = "DATA_READER"; // KUNCI UTAMA: Pakai nama ini
+        var oldData = window[namaVar];
+        
         var s = document.createElement("script");
         s.src = config.sumberData;
         s.onload = function() {
-            var dataBaru = window[namaVarGlobal];
+            var dataBaru = window[namaVar];
             if (dataBaru && Array.isArray(dataBaru)) {
                 lokalKatalog = dataBaru;
                 var n = 0;
@@ -51,60 +54,51 @@ window.bukaReader = function(config) {
                     });
                 });
                 st.all.forEach(function (x) { x.nn = norm(x.nama); x.hay = norm([x.nama, x.pl, x.arti, x.ar, x.ap].join(" ")); });
-                if (oldData !== undefined) window[namaVarGlobal] = oldData;
-                else delete window[namaVarGlobal];
+                if (oldData !== undefined) window[namaVar] = oldData;
+                else delete window[namaVar];
                 view();
             } else {
                 var m = document.getElementById("main");
-                if(m) m.innerHTML = '<div class="msg" style="color:red">❌ Gagal membaca katalog. Pastikan file ' + config.sumberData + ' berisi <code>window.' + namaVarGlobal + '</code>.</div>';
+                if(m) m.innerHTML = '<div class="msg" style="color:red">❌ Gagal membaca katalog. Pastikan file berisi <code>window.DATA_READER</code>.</div>';
             }
         };
         s.onerror = function() {
             var m = document.getElementById("main");
-            if(m) m.innerHTML = '<div class="msg" style="color:red">❌ Gagal mengunduh file katalog dari:<br>' + config.sumberData + '</div>';
+            if(m) m.innerHTML = '<div class="msg" style="color:red">❌ Gagal mengunduh katalog dari:<br>' + config.sumberData + '</div>';
         };
         document.head.appendChild(s);
     }
 
+    // --- MEMANGGIL ISI KITAB ---
     function muatIsi(d) {
         if (lokalKitab[d.nama] || window.KITAB[d.nama]) { st.ld[d.id] = "ok"; return; }
         if (st.ld[d.id] === "load") return;
         st.ld[d.id] = "load";
         
         var s = document.createElement("script"), done = false, t;
-        function fin(ok, pesanErr) {
+        function fin(ok, err) {
             if (done) return; done = true; clearTimeout(t);
             st.ld[d.id] = (ok && window.KITAB[d.nama]) ? "ok" : "fail";
+            if (!ok && err) st.ld[d.id + "_err"] = err;
             if (s.parentNode) s.parentNode.removeChild(s);
-            if (!ok && pesanErr) {
-                // Simpan pesan error di memori
-                st.ld[d.id + "_err"] = pesanErr;
-            }
             if (st.sel === d.id) view();
         }
         
         t = setTimeout(function () { fin(false, "Waktu habis (Timeout)."); }, 20000);
-        
         s.onload = function () { 
             if (window.KITAB && window.KITAB[d.nama]) {
                 lokalKitab[d.nama] = window.KITAB[d.nama];
                 delete window.KITAB[d.nama];
                 fin(true);
             } else {
-                fin(false, "File berhasil diunduh, tapi isi variabel <code>window.KITAB['" + d.nama + "']</code> tidak ditemukan di dalamnya.");
+                fin(false, "File berhasil diunduh, tapi tidak ada data <code>window.KITAB['" + d.nama + "']</code> di dalamnya.");
             }
         };
-        
-        s.onerror = function () { 
-            fin(false, "Gagal mengunduh file. Periksa koneksi internet atau pastikan file benar-benar ada di GitHub."); 
-        };
-        
+        s.onerror = function () { fin(false, "Gagal mengunduh file. Pastikan file benar-benar ada di GitHub."); };
         s.async = true;
         var base = window.KITAB_BASE || config.kitabBase || "";
         var urlFile = base + namaFile(d.nama);
         s.src = urlFile;
-        
-        // Simpan URL yang sedang dicoba untuk ditampilkan jika error
         st.ld[d.id + "_url"] = urlFile;
         document.head.appendChild(s);
     }
@@ -142,7 +136,7 @@ window.bukaReader = function(config) {
         if (!b) {
             if (st.ld[d.id] === "fail") {
                 var pesanErr = st.ld[d.id + "_err"] || "Isi belum tersedia.";
-                var urlDicoba = st.ld[d.id + "_url"] || (window.KITAB_BASE || "") + namaFile(d.nama);
+                var urlDicoba = st.ld[d.id + "_url"] || "";
                 return h + '<div class="msg" style="border:1px solid red; text-align:left;">' +
                 '<b style="color:red">❌ GAGAL MEMUAT KITAB</b><br><br>' +
                 '<b>Pesan:</b> ' + pesanErr + '<br><br>' +
