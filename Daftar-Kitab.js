@@ -4,7 +4,7 @@
    ============================================================ */
 
 // 1. Alamat folder tempat file isi kitab disimpan
-window.KITAB_BASE = "https://teamkeringat.github.io/KitabKuning/";
+window.KITAB_BASE = "https://teamkeringat.github.io/Kitab/";
 
 // 2. Daftar Katalog Kitab
 window.DATA_READER = [
