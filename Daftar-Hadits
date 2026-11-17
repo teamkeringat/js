@@ -1,0 +1,20 @@
+/* Daftar-Hadis.js */
+window.KITAB_BASE = "https://teamkeringat.github.io/KitabHadis/"; // Pastikan folder ini ada di GitHub
+
+window.DATA_READER = [
+  ["Hadis Shohih", "Kumpulan hadis-hadis shohih yang menjadi rujukan utama umat Islam.", [
+    ["ShohihBukhari", "صَحِيحُ الْبُخَارِيِّ", "محمد بن إسماعيل البخاري", "Imam al-Bukhari (w. 256 H)", "Kumpulan hadis shohih Bukhari", "Kitab hadis paling shohih setelah Al-Qur'an.", "L"],
+    ["ShohihMuslim", "صَحِيحُ مُسْلِمٍ", "مسلم بن الحجاج", "Imam Muslim (w. 261 H)", "Kumpulan hadis shohih Muslim", "Kitab hadis shohih yang berpasangan dengan Shohih Bukhari.", "L"]
+  ]],
+  ["Hadis Lainnya (Kutubus Sittah)", "Empat kitab hadis utama lainnya dalam Islam.", [
+    ["SunanAbuDawud", "سُنَنُ أَبِي دَاوُدَ", "أبو داود السجستاني", "Imam Abu Dawud (w. 275 H)", "Sunan Abu Dawud", "Fokus pada hadis-hadis hukum fiqih.", "L"],
+    ["JamiTirmidzi", "جَامِعُ التِّرْمِذِيِّ", "الترمذي", "Imam at-Tirmidzi (w. 279 H)", "Kumpulan Tirmidzi", "Menyertakan penilaian derajat hadis.", "L"],
+    ["SunanNasa'i", "سُنَنُ النَّسَائِيِّ", "النسائي", "Imam an-Nasa'i (w. 303 H)", "Sunan Nasa'i", "Salah satu dari Kutubus Sittah.", "L"],
+    ["SunanIbnuMajah", "سُنَنُ ابْنِ مَاجَهْ", "ابن ماجه", "Imam Ibnu Majah (w. 273 H)", "Sunan Ibnu Majah", "Kitab keenam dalam Kutubus Sittah.", "L"]
+  ]],
+  ["Hadis Tematik & Syarah", "Kumpulan hadis per tema dan penjelasan (syarah) kitab hadis.", [
+    ["RiyadhusSholihin", "رِيَاضُ الصَّالِحِينَ", "النووي", "Imam an-Nawawi (w. 676 H)", "Taman orang-orang saleh", "Hadis per tema: adab, ibadah, akhlak.", "P"],
+    ["ArbainNawawiyyah", "الْأَرْبَعُونَ النَّوَوِيَّةُ", "النووي", "Imam an-Nawawi (w. 676 H)", "Empat puluh hadis Nawawi", "42 hadis pokok agama.", "P"],
+    ["BulughulMaram", "بُلُوغُ الْمَرَامِ", "ابن حجر العسقلاني", "Ibnu Hajar al-Asqolani (w. 852 H)", "Mencapai tujuan", "Hadis-hadis hukum menurut bab fiqih.", "M"]
+  ]]
+];
