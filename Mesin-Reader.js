@@ -1,26 +1,31 @@
 /* ============================================================
-   MESIN READER UNIVERSAL — Versi Perbaikan
-   Mendukung field ke-8 (nama file eksplisit) di Daftar-*.js
+   MESIN READER UNIVERSAL (Versi Final Perbaikan)
+   - Mendukung Nama File Eksplisit (Field ke-8)
+   - Toolbar Fixed (Diam di Atas)
+   - Penanganan Error & Retry
+   - Support Tema Gelap/Terang (ng-light)
    ============================================================ */
 
 window.bukaReader = function(config) {
     var app = document.getElementById("app");
     if (!app) return;
 
+    // Pastikan struktur HTML dasar ada, bungkus dengan .toolbar-fix
     if (!document.getElementById("main")) {
         app.innerHTML =
-            '<div class="bar-cari"><div class="srch-wrap">' +
-            '<input id="q" type="text" placeholder="Cari..." autocomplete="off">' +
-            '<div class="sg" id="sg"></div></div></div>' +
-            '<div class="bar-pilih">' +
-            '<select id="k" class="ph"><option value="" selected>Pilih Kitab</option></select>' +
-            '<select id="b" class="ph"><option>Pembahasan</option></select></div>' +
+            '<div class="toolbar-fix">' +
+                '<div class="bar-cari"><div class="srch-wrap">' +
+                    '<input id="q" type="text" placeholder="' + (config.placeholderCari || "Cari...") + '" autocomplete="off">' +
+                    '<div class="sg" id="sg"></div>' +
+                '</div></div>' +
+                '<div class="bar-pilih">' +
+                    '<select id="k" class="ph"><option value="" selected>' + (config.labelPilih || "Pilih Kitab") + '</option></select>' +
+                    '<select id="b" class="ph"><option>Pembahasan</option></select>' +
+                '</div>' +
+            '</div>' +
             '<div id="main"></div>' +
             '<p id="stat" style="font-size:.75rem;opacity:.7;margin-top:10px"></p>';
     }
-
-    var elQ = document.getElementById("q");
-    if (elQ) elQ.placeholder = config.placeholderCari || "Cari...";
 
     // ============================================================
     // STATE
@@ -31,14 +36,18 @@ window.bukaReader = function(config) {
     var lokalKitab = {};
 
     // ============================================================
-    // UTIL
+    // UTILITAS
     // ============================================================
     function esc(t) {
         return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) {
             return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
         });
     }
-    function teks(t) { return Array.isArray(t) ? t.join("\n\n") : (t == null ? "" : String(t)); }
+    
+    function teks(t) { 
+        return Array.isArray(t) ? t.join("\n\n") : (t == null ? "" : String(t)); 
+    }
+    
     function norm(s) {
         return String(s || "").toLowerCase()
             .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
@@ -46,28 +55,31 @@ window.bukaReader = function(config) {
             .replace(/[^a-z0-9\u0600-\u06FF]/g, "");
     }
 
-    // Nama file: prioritaskan field eksplisit
+    // Fungsi menentukan nama file (Prioritaskan field ke-8)
     function namaFile(nama, fileEksplisit) {
         if (fileEksplisit && String(fileEksplisit).trim()) {
             var f = String(fileEksplisit).trim();
             return /\.js$/i.test(f) ? f : f + ".js";
         }
-        // fallback lama (kalau Daftar-*.js belum diupdate)
+        // Fallback jika Daftar-*.js belum diupdate
         return nama.replace(/[^A-Za-z0-9\-]+/g, " ").trim()
             .split(" ").map(function (w) {
                 return w.charAt(0).toUpperCase() + w.slice(1);
             }).join("") + ".js";
     }
 
-    function cariKitab(id) { return st.all.filter(function (x) { return x.id === id; })[0]; }
+    function cariKitab(id) { 
+        return st.all.filter(function (x) { return x.id === id; })[0]; 
+    }
 
     function buku(d) {
         if (!d) return null;
+        // Cek lokal dulu, baru cek global window.KITAB
         return lokalKitab[d.nama] || (window.KITAB && window.KITAB[d.nama]) || null;
     }
 
     // ============================================================
-    // MUAT KATALOG
+    // 1. MUAT KATALOG (Dari Daftar-*.js)
     // ============================================================
     function muatDataInduk() {
         var namaVar = config.namaVariabel || "DATA_READER";
@@ -81,6 +93,8 @@ window.bukaReader = function(config) {
                 lokalKatalog = dataBaru;
                 st.all = [];
                 var n = 0;
+                
+                // Parsing Katalog
                 lokalKatalog.forEach(function (g) {
                     (g[2] || []).forEach(function (r) {
                         n++;
@@ -95,16 +109,20 @@ window.bukaReader = function(config) {
                             arti: r[4],
                             idn: r[5],
                             lv: r[6],
-                            file: r[7] || null   // ← nama file eksplisit
+                            file: r[7] || null // Nama file eksplisit
                         });
                     });
                 });
+                
+                // Persiapan pencarian (Normalisasi)
                 st.all.forEach(function (x) {
                     x.nn = norm(x.nama);
                     x.hay = norm([x.nama, x.pl, x.arti, x.ar, x.ap].join(" "));
                 });
+
                 if (oldData !== undefined) window[namaVar] = oldData;
                 else delete window[namaVar];
+                
                 view();
             } else {
                 var m = document.getElementById("main");
@@ -119,19 +137,16 @@ window.bukaReader = function(config) {
     }
 
     // ============================================================
-    // MUAT ISI KITAB
+    // 2. MUAT ISI KITAB (Dari Folder Kitab/)
     // ============================================================
     function muatIsi(d) {
         if (!d) return;
-        // Sudah ada di cache lokal?
-        if (lokalKitab[d.nama]) { st.ld[d.id] = "ok"; return; }
-        // Sudah ada di global (misal dari preload)?
-        if (window.KITAB && window.KITAB[d.nama]) {
-            lokalKitab[d.nama] = window.KITAB[d.nama];
-            st.ld[d.id] = "ok";
-            return;
+        
+        // Jika sudah ada di cache lokal atau global, langsung tampilkan
+        if (lokalKitab[d.nama] || (window.KITAB && window.KITAB[d.nama])) { 
+            st.ld[d.id] = "ok"; return; 
         }
-        // Sedang loading?
+        // Cegah double loading
         if (st.ld[d.id] === "load") return;
         st.ld[d.id] = "load";
 
@@ -148,12 +163,13 @@ window.bukaReader = function(config) {
             if (st.sel === d.id) view();
         }
 
+        // Timeout 20 Detik
         t = setTimeout(function () { fin(false, "Waktu habis (Timeout 20 detik)."); }, 20000);
 
         s.onload = function () {
             if (window.KITAB && window.KITAB[d.nama]) {
                 lokalKitab[d.nama] = window.KITAB[d.nama];
-                // JANGAN delete — biarkan tetap tersedia untuk referensi
+                // TIDAK MENGHAPUS window.KITAB agar tidak bentrok dengan kitab lain
                 fin(true);
             } else {
                 var keys = window.KITAB ? Object.keys(window.KITAB) : [];
@@ -164,7 +180,11 @@ window.bukaReader = function(config) {
                 );
             }
         };
-        s.onerror = function () { fin(false, "Gagal mengunduh file. Pastikan file benar-benar ada di GitHub."); };
+        
+        s.onerror = function () { 
+            fin(false, "Gagal mengunduh file. Pastikan file benar-benar ada di GitHub."); 
+        };
+        
         s.async = true;
 
         var base = window.KITAB_BASE || config.kitabBase || "";
@@ -172,11 +192,12 @@ window.bukaReader = function(config) {
         s.src = urlFile;
         st.ld[d.id + "_url"] = urlFile;
         console.log("[Reader] Load:", urlFile);
+        
         document.head.appendChild(s);
     }
 
     // ============================================================
-    // RENDER
+    // 3. RENDER TAMPILAN
     // ============================================================
     function itemHtml(x) {
         return '<div class="it">' +
@@ -201,6 +222,7 @@ window.bukaReader = function(config) {
             return '<div class="msg">' + (st.warn ? esc(config.labelKosong) + "<br>" : "") +
                 "Ketik nama di kotak pencarian, atau pilih " + esc(config.labelPilih) + ".</div>";
         }
+        
         var h = '<div class="ic">' +
             '<div class="ar">' + esc(d.ar) + "</div>" +
             '<div class="ap">' + esc(d.ap) + "</div>" +
@@ -226,6 +248,7 @@ window.bukaReader = function(config) {
         sb = b.sebutan || "Bab";
         if (b.catatan) h += '<p class="pg">' + esc(b.catatan) + "</p>";
         var bab = b.bab || [];
+        
         if (st.bi === "all") {
             bab.forEach(function (r, i) {
                 var k = d.id + ":" + i, on = st.ob[k] !== false;
@@ -250,6 +273,7 @@ window.bukaReader = function(config) {
         var elK = document.getElementById("k");
         var elB = document.getElementById("b");
 
+        // Render Dropdown Kitab
         if (elK) {
             var hk = '<option value=""' + (d ? "" : " selected") + ">" + esc(config.labelPilih) + "</option>";
             lokalKatalog.forEach(function (g) {
@@ -262,6 +286,7 @@ window.bukaReader = function(config) {
             elK.innerHTML = hk;
         }
 
+        // Render Dropdown Bab
         if (elB) {
             var hb = "";
             if (!d) hb = '<option value="all">Pembahasan</option>';
@@ -287,6 +312,9 @@ window.bukaReader = function(config) {
         view();
     }
 
+    // ============================================================
+    // 4. PENCARIAN & SARAN
+    // ============================================================
     function saran(q) {
         var tk = String(q).split(/\s+/).map(norm).filter(Boolean);
         if (!tk.length) return [];
@@ -334,7 +362,7 @@ window.bukaReader = function(config) {
     }
 
     // ============================================================
-    // EVENTS
+    // 5. EVENT LISTENERS
     // ============================================================
     if (!app.dataset.bound) {
         app.dataset.bound = "1";
@@ -354,8 +382,17 @@ window.bukaReader = function(config) {
         });
         app.addEventListener("click", function (e) {
             var t = e.target;
+            
+            // Klik saran pencarian
             var li = t.closest && t.closest(".li[data-id]");
-            if (li) { var id = +li.getAttribute("data-id"); tutupSaran(); pilih(id); return; }
+            if (li) { 
+                var id = +li.getAttribute("data-id"); 
+                tutupSaran(); 
+                pilih(id); 
+                return; 
+            }
+            
+            // Klik tombol Retry
             if (t.getAttribute && t.getAttribute("data-retry")) {
                 e.preventDefault();
                 var d = cariKitab(st.sel);
@@ -367,6 +404,8 @@ window.bukaReader = function(config) {
                 }
                 return;
             }
+            
+            // Klik buka/tutup bab
             var hd = t.closest && t.closest(".hd");
             if (hd) {
                 var box = hd.parentNode, k = box.getAttribute("data-b");
@@ -377,7 +416,17 @@ window.bukaReader = function(config) {
                 }
             }
         });
+        
+        // Tutup saran jika klik di luar
+        document.addEventListener("click", function(e) {
+            var box = document.getElementById("sg");
+            var elQ = document.getElementById("q");
+            if (box && box.classList.contains("on") && e.target !== elQ && !box.contains(e.target)) {
+                box.className = "sg";
+            }
+        });
     }
 
+    // Jalankan!
     muatDataInduk();
 };
