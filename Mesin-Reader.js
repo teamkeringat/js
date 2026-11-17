@@ -1,5 +1,5 @@
 /* ============================================================
-   MESIN READER UNIVERSAL (Versi Final)
+   MESIN READER UNIVERSAL (Final Layout Fix)
    ============================================================ */
 
 window.bukaReader = function(config) {
@@ -47,7 +47,6 @@ window.bukaReader = function(config) {
     function cariKitab(id) { return st.all.filter(function (x) { return x.id === id; })[0]; }
     function buku(d) { return d ? (lokalKitab[d.nama] || (window.KITAB && window.KITAB[d.nama])) : null; }
 
-    // 1. MUAT KATALOG
     function muatDataInduk() {
         var namaVar = config.namaVariabel || "DATA_READER";
         var oldData = window[namaVar];
@@ -80,7 +79,6 @@ window.bukaReader = function(config) {
         document.head.appendChild(s);
     }
 
-    // 2. MUAT ISI KITAB
     function muatIsi(d) {
         if (!d) return;
         if (lokalKitab[d.nama] || (window.KITAB && window.KITAB[d.nama])) { st.ld[d.id] = "ok"; return; }
@@ -102,7 +100,6 @@ window.bukaReader = function(config) {
                 lokalKitab[d.nama] = window.KITAB[d.nama];
                 fin(true);
             } else {
-                var keys = window.KITAB ? Object.keys(window.KITAB) : [];
                 fin(false, "File terunduh, tapi tidak ada window.KITAB['" + esc(d.nama) + "'] di dalamnya.");
             }
         };
@@ -116,7 +113,6 @@ window.bukaReader = function(config) {
         document.head.appendChild(s);
     }
 
-    // 3. RENDER
     function itemHtml(x) {
         return '<div class="it">' + (x.ar ? '<div class="ar">' + esc(x.ar) + "</div>" : "") + (x.lt ? '<div class="lt">' + esc(x.lt) + "</div>" : "") + (x.tr ? '<div class="tr">' + esc(x.tr) + "</div>" : "") + (x.ket ? '<div class="tn">' + esc(x.ket) + "</div>" : "") + "</div>";
     }
@@ -132,7 +128,6 @@ window.bukaReader = function(config) {
         var d = st.sel ? cariKitab(st.sel) : null;
         if (!d) return '<div class="msg">' + (st.warn ? esc(config.labelKosong) + "<br>" : "") + "Ketik nama di kotak pencarian, atau pilih " + esc(config.labelPilih) + ".</div>";
         
-        // --- JUDUL BOLD DIPALING ATAS ---
         var h = '<div class="ic">' +
             '<div class="bh">' + esc(d.nama) + " — " + esc(d.arti) + "</div>" +
             '<div class="ar">' + esc(d.ar) + "</div>" +
